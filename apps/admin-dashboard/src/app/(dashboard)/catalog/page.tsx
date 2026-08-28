@@ -33,6 +33,13 @@ export default function CatalogPage() {
   const [serviceDuration, setServiceDuration] = useState('45');
   const [serviceTargetGender, setServiceTargetGender] = useState('UNISEX');
 
+  const [editingService, setEditingService] = useState<ServiceDto | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [editBasePrice, setEditBasePrice] = useState('');
+  const [editDuration, setEditDuration] = useState('45');
+  const [editTargetGender, setEditTargetGender] = useState('UNISEX');
+
   const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -58,6 +65,36 @@ export default function CatalogPage() {
   useEffect(() => {
     fetchCatalog();
   }, [fetchCatalog]);
+
+  const handleOpenEditService = (s: ServiceDto) => {
+    setEditingService(s);
+    setEditName(s.name);
+    setEditCategoryId(s.categoryId || (categories[0]?.id ?? ''));
+    setEditBasePrice(String(s.basePrice ?? 0));
+    setEditDuration(String(s.durationMinutes ?? 45));
+    setEditTargetGender(s.targetGender || 'UNISEX');
+  };
+
+  const handleUpdateService = async () => {
+    if (!editingService || !editName.trim() || !editBasePrice) return;
+    setActionLoading(true);
+    try {
+      await adminCatalogService.updateService(editingService.id, {
+        name: editName.trim(),
+        categoryId: editCategoryId,
+        basePrice: parseFloat(editBasePrice),
+        durationMinutes: parseInt(editDuration, 10),
+        targetGender: editTargetGender,
+      });
+      success('Service Updated', 'Master service definition updated.');
+      setEditingService(null);
+      fetchCatalog();
+    } catch (err: any) {
+      danger('Failed to update service', err.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleCreateCategory = async () => {
     if (!categoryName.trim()) return;
@@ -170,14 +207,24 @@ export default function CatalogPage() {
       key: 'actions',
       header: 'Actions',
       render: (s) => (
-        <AppButton
-          variant="danger"
-          size="sm"
-          onClick={() => setDeletingServiceId(s.id)}
-          leftIcon={<Trash2 size={14} />}
-        >
-          Delete
-        </AppButton>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <AppButton
+            variant="secondary"
+            size="sm"
+            onClick={() => handleOpenEditService(s)}
+            leftIcon={<Edit size={14} />}
+          >
+            Edit
+          </AppButton>
+          <AppButton
+            variant="danger"
+            size="sm"
+            onClick={() => setDeletingServiceId(s.id)}
+            leftIcon={<Trash2 size={14} />}
+          >
+            Delete
+          </AppButton>
+        </div>
       ),
     },
   ];
@@ -359,6 +406,62 @@ export default function CatalogPage() {
             label="Target Gender"
             value={serviceTargetGender}
             onChange={(e) => setServiceTargetGender(e.target.value)}
+            options={[
+              { value: 'UNISEX', label: 'Unisex (All Clients)' },
+              { value: 'FEMALE', label: 'Female Only' },
+              { value: 'MALE', label: 'Male Only' },
+            ]}
+          />
+        </div>
+      </ActionModal>
+
+      {/* Edit Service Modal */}
+      <ActionModal
+        isOpen={!!editingService}
+        onClose={() => setEditingService(null)}
+        title={`Edit Master Service: ${editingService?.name || ''}`}
+        footer={
+          <>
+            <AppButton variant="secondary" onClick={() => setEditingService(null)}>
+              Cancel
+            </AppButton>
+            <AppButton variant="primary" onClick={handleUpdateService} isLoading={actionLoading}>
+              Save Changes
+            </AppButton>
+          </>
+        }
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <AppInput
+            label="Service Title *"
+            placeholder="e.g., Signature Keratin Smoothing"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+          />
+          <AppSelect
+            label="Category *"
+            value={editCategoryId}
+            onChange={(e) => setEditCategoryId(e.target.value)}
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
+          <AppInput
+            label="Base Price (INR) *"
+            type="number"
+            placeholder="1500"
+            value={editBasePrice}
+            onChange={(e) => setEditBasePrice(e.target.value)}
+          />
+          <AppInput
+            label="Duration (Minutes)"
+            type="number"
+            placeholder="45"
+            value={editDuration}
+            onChange={(e) => setEditDuration(e.target.value)}
+          />
+          <AppSelect
+            label="Target Gender"
+            value={editTargetGender}
+            onChange={(e) => setEditTargetGender(e.target.value)}
             options={[
               { value: 'UNISEX', label: 'Unisex (All Clients)' },
               { value: 'FEMALE', label: 'Female Only' },
