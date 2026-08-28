@@ -1,0 +1,162 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # STAGING POSTGRESQL DATABASE
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: saloon_staging_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-saloon_staging_user}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-saloon_staging_pass}
+      POSTGRES_DB: ${DATABASE_NAME:-saloon_staging_db}
+    volumes:
+      - postgres_staging_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 2048M
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DATABASE_USER:-saloon_staging_user} -d ${DATABASE_NAME:-saloon_staging_db}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - saloon_staging_internal
+
+  # ==========================================
+  # STAGING REDIS CACHE & QUEUES
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: saloon_staging_redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-saloon_staging_redis_pass}
+    volumes:
+      - redis_staging_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 1024M
+    healthcheck:
+      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD:-saloon_staging_redis_pass}', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - saloon_staging_internal
+
+  # ==========================================
+  # STAGING BACKEND API (NestJS)
+  # ==========================================
+  api:
+    build:
+      context: ../../
+      dockerfile: apps/api/Dockerfile
+    container_name: saloon_staging_api
+    restart: always
+    environment:
+      NODE_ENV: staging
+      APP_PORT: 3000
+      APP_PREFIX: api
+      DATABASE_URL: postgresql://${DATABASE_USER:-saloon_staging_user}:${DATABASE_PASSWORD:-saloon_staging_pass}@postgres:5432/${DATABASE_NAME:-saloon_staging_db}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-saloon_staging_redis_pass}
+      QUEUE_REDIS_HOST: redis
+      QUEUE_REDIS_PORT: 6379
+      QUEUE_REDIS_PASSWORD: ${REDIS_PASSWORD:-saloon_staging_redis_pass}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-staging-super-secret-access-token-min-32-chars-long}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-staging-super-secret-refresh-token-min-32-chars-long}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_staging_12345}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-staging_secret_12345}
+      RAZORPAY_WEBHOOK_SECRET: ${RAZORPAY_WEBHOOK_SECRET:-staging_webhook_secret_12345}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID:-saloon-staging-app}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL:-staging@saloon-staging-app.iam.gserviceaccount.com}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY:-"-----BEGIN PRIVATE KEY-----\nMOCK_STAGING_KEY\n-----END PRIVATE KEY-----\n"}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-AC_staging_1234567890123456789012}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-staging_auth_token_12345}
+      TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER:-+919999999999}
+      R2_ACCOUNT_ID: ${R2_ACCOUNT_ID:-staging_r2_account_id}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:-staging_r2_access_key}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:-staging_r2_secret_key}
+      R2_BUCKET_NAME: ${R2_BUCKET_NAME:-saloon-staging-assets}
+      R2_PUBLIC_DOMAIN: ${R2_PUBLIC_DOMAIN:-https://assets-staging.saloon.godivatech.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1024M
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3000/api/v1/health/readiness']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - saloon_staging_internal
+      - saloon_staging_edge
+
+  # ==========================================
+  # STAGING SALON OWNER DASHBOARD (Next.js)
+  # ==========================================
+  salon-dashboard:
+    build:
+      context: ../../
+      dockerfile: apps/salon-dashboard/Dockerfile
+    container_name: saloon_staging_salon_dashboard
+    restart: always
+    environment:
+      NODE_ENV: staging
+      PORT: 3001
+      NEXT_PUBLIC_API_URL: https://api-staging.saloon.godivatech.com
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - saloon_staging_edge
+
+  # ==========================================
+  # STAGING SUPER-ADMIN DASHBOARD (Next.js)
+  # ==========================================
+  admin-dashboard:
+    build:
+      context: ../../
+      dockerfile: apps/admin-dashboard/Dockerfile
+    container_name: saloon_staging_admin_dashboard
+    restart: always
+    environment:
+      NODE_ENV: staging
+      PORT: 3002
+      NEXT_PUBLIC_API_URL: https://api-staging.saloon.godivatech.com
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    networks:
+      - saloon_staging_edge
+
+networks:
+  saloon_staging_internal:
+    internal: true
+  saloon_staging_edge:
+    driver: bridge
+
+volumes:
+  postgres_staging_data:
+  redis_staging_data:

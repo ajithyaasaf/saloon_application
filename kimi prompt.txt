@@ -1,0 +1,650 @@
+plan 
+# PHASE 24 — CUSTOMER MOBILE APP (`apps/customer-mobile`)
+
+## ARCHITECTURAL ANALYSIS & COMPLETE IMPLEMENTATION PLAN
+
+---
+
+## 1. Existing `apps/customer-mobile` State & Monorepo Audit
+
+### 1.1 Directory & Workspace State
+
+- **Workspace Location**: `apps/customer-mobile`
+- **Current Files**: `.gitkeep` only.
+- **Root Workspace Integration**: `pnpm-workspace.yaml` declares `'apps/*'` and `'packages/*'`, making `apps/customer-mobile` a first-class package within the Turborepo monorepo.
+- **Dependencies Available for Reuse**:
+  - `@saloon/shared-types` (v0.0.1): Canonical domain DTOs, enums (`BookingStatus`, `PaymentMethod`, `Gender`, `FileCategory`), API envelopes (`ApiResponse<T>`, `PaginatedResult<T>`).
+  - `@saloon/shared-utils` (v0.0.1): `ApiClient`, `ITokenStorage`, `formatINR`, `calculateGST`, `normalizeIndianPhone`, `isValidIndianPhone`, `timeStringToMinutes`, `minutesToTimeString`, `maskPhone`, `maskEmail`, `formatBytes`.
+  - `@saloon/config` (v0.0.1): `API_ROUTES` dictionary (80+ endpoints), `PLATFORM_CONSTANTS` (IST timezone, currency defaults, upload size limits).
+  - Backend API (`apps/api`): 13 production-ready modules covering OTP auth, customer self-service, booking, payment, reviews, loyalty, wallet, and the Phase 20 File & Media Engine.
+
+### 1.2 What Must Be Created
+
+1. **Application Foundation**: Expo SDK 51+ / React Native project configuration (`package.json`, `app.json`, `tsconfig.json`, `metro.config.js`, `eas.json`, `jest.config.js`).
+2. **Token Storage Layer**: `SecureStoreTokenStorage` implementing `ITokenStorage` using `expo-secure-store` (iOS Keychain / Android Keystore).
+3. **Navigation Infrastructure**: `@react-navigation/native` with `@react-navigation/bottom-tabs` and `@react-navigation/native-stack`.
+4. **Mobile Design System**: Reusable luxury dark glassmorphic components (`Button`, `Card`, `Input`, `Badge`, `BottomSheet`, `Header`, `Skeleton`, `EmptyState`, `Toast`).
+5. **Customer Domain Services**: Typed client wrappers consuming `API_ROUTES` via `ApiClient`.
+6. **Feature Screens**: Complete customer journey (Auth, Discovery, Salon Details, Service Selection, Booking & Checkout, My Bookings, Wallet & Loyalty, Customer Profile, Reviews, Notifications).
+
+---
+
+## 2. Customer Mobile App Architecture
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+```
+
+│                   apps/customer-mobile (Expo SDK 51+)                  │
+
+├────────────────────────────────────────────────────────────────────────┤
+
+│ 1. PRESENTATION LAYER (React Native Components & Navigation)           │
+
+│    - Root Navigation (Auth Stack vs Main App Stack)                    │
+
+│    - Bottom Tabs: Explore (Home) | Bookings | Wallet | Profile         │
+
+│    - Nested Modal Stacks: Booking Flow | Salon Detail | Review Flow    │
+
+│    - Design System: Dark Glassmorphic Tokens, Native Components        │
+
+├────────────────────────────────────────────────────────────────────────┤
+
+│ 2. STATE & CONTEXT LAYER                                               │
+
+│    - AuthContext: OTP state, session restoration, active user profile  │
+
+│    - BookingFlowContext: Selected salon, branch, services, slot, lock  │
+
+│    - LocationContext: Device GPS coordinates / manual city selector    │
+
+├────────────────────────────────────────────────────────────────────────┤
+
+│ 3. NETWORKING & STORAGE LAYER (Phase 22 Reused Foundation)             │
+
+│    - ApiClient (from @saloon/shared-utils) with 401 refresh queue      │
+
+│    - SecureStoreTokenStorage (implements ITokenStorage via SecureStore)│
+
+│    - API\_ROUTES & PLATFORM\_CONSTANTS (from @saloon/config)             │
+
+│    - DTO Interfaces & Enums (from @saloon/shared-types)                │
+
+└───────────────────────────────────┬────────────────────────────────────┘
+
+                                    │ HTTPS REST / Presigned S3/R2
+
+                                    ▼
+
+┌────────────────────────────────────────────────────────────────────────┐
+
+│                        BACKEND API (@saloon/api)                       │
+
+│    Production NestJS Engine (13 Domains, Redis, PostgreSQL, Media)     │
+
+└────────────────────────────────────────────────────────────────────────┘
+
+---
+
+## 3. Customer-Facing Backend Capabilities Mapping
+
+| **Domain / CapabilityBackend Endpoint (****`API_ROUTES`****)HTTP MethodBackend ControllerStatus** |                                      |          |                                                    |             |
+| ------------------------------------------------------------------------------------------------- | ------------------------------------ | -------- | -------------------------------------------------- | ----------- |
+| **OTP Send (Phone)**                                                                              | `AUTH.SEND_OTP`                      | `POST`   | `AuthController.sendOtp()`                         | ✅ Supported |
+| **OTP Verify & Login**                                                                            | `AUTH.VERIFY_OTP`                    | `POST`   | `AuthController.verifyOtp()`                       | ✅ Supported |
+| **Token Refresh**                                                                                 | `AUTH.REFRESH_TOKEN`                 | `POST`   | `AuthController.refreshToken()`                    | ✅ Supported |
+| **Logout**                                                                                        | `AUTH.LOGOUT`                        | `POST`   | `AuthController.logout()`                          | ✅ Supported |
+| **Customer Profile**                                                                              | `CUSTOMER.ME`                        | `GET`    | `CustomerCustomerController.getProfile()`          | ✅ Supported |
+| **Customer Preferences**                                                                          | `CUSTOMER.ME` (`/profile`)           | `PATCH`  | `CustomerCustomerController.updateProfile()`       | ✅ Supported |
+| **Wallet Balance & Ledger**                                                                       | `CUSTOMER.WALLET`                    | `GET`    | `CustomerCustomerController.getWalletLedger()`     | ✅ Supported |
+| **Loyalty Points & Ledger**                                                                       | `CUSTOMER.LOYALTY`                   | `GET`    | `CustomerCustomerController.getLoyaltyLedger()`    | ✅ Supported |
+| **Active Membership Tier**                                                                        | `CUSTOMER.ME` (`/membership`)        | `GET`    | `CustomerCustomerController.getMembership()`       | ✅ Supported |
+| **Visit History**                                                                                 | `CUSTOMER.ME` (`/visits`)            | `GET`    | `CustomerCustomerController.getVisits()`           | ✅ Supported |
+| **Referral Summary**                                                                              | `CUSTOMER.ME` (`/referrals`)         | `GET`    | `CustomerCustomerController.getReferrals()`        | ✅ Supported |
+| **Salon Discovery / List**                                                                        | `SALONS.LIST`                        | `GET`    | `SalonAdminController.getSalons()`                 | ✅ Supported |
+| **Salon Details (Brand)**                                                                         | `SALONS.GET(id)`                     | `GET`    | `SalonAdminController.getSalon()`                  | ✅ Supported |
+| **Branch List by Salon**                                                                          | `SALONS.BRANCHES.LIST(sId)`          | `GET`    | `SalonAdminController.getBranches()`               | ✅ Supported |
+| **Branch Details & Hours**                                                                        | `SALONS.BRANCHES.GET(sId, bId)`      | `GET`    | `SalonAdminController.getBranch()`                 | ✅ Supported |
+| **Service Categories**                                                                            | `SERVICE_CATALOG.CATEGORIES.LIST`    | `GET`    | `ServiceCatalogAdminController.getCategories()`    | ✅ Supported |
+| **Services by Category**                                                                          | `SERVICE_CATALOG.SERVICES.LIST`      | `GET`    | `ServiceCatalogAdminController.getServices()`      | ✅ Supported |
+| **Time Slot Availability**                                                                        | `BOOKING.SLOTS`                      | `GET`    | `BookingAdminController.getSlots()`                | ✅ Supported |
+| **10-Min Reservation Lock**                                                                       | `/customer/bookings/reservation`     | `POST`   | `BookingCustomerController.acquireLock()`          | ✅ Supported |
+| **Release Slot Lock**                                                                             | `/customer/bookings/reservation/:k`  | `DELETE` | `BookingCustomerController.releaseLock()`          | ✅ Supported |
+| **Create Booking**                                                                                | `BOOKING.CREATE`                     | `POST`   | `BookingCustomerController.createBooking()`        | ✅ Supported |
+| **Customer Booking History**                                                                      | `BOOKING.MY_BOOKINGS`                | `GET`    | `BookingCustomerController.getCustomerBookings()`  | ✅ Supported |
+| **Booking Details**                                                                               | `BOOKING.GET(id)`                    | `GET`    | `BookingCustomerController.getBookingById()`       | ✅ Supported |
+| **Cancel Booking**                                                                                | `BOOKING.CANCEL(id)`                 | `POST`   | `BookingCustomerController.cancelBooking()`        | ✅ Supported |
+| **Payment Order Create**                                                                          | `PAYMENT.INITIATE`                   | `POST`   | `PaymentCustomerController.createPayment()`        | ✅ Supported |
+| **Payment Verification**                                                                          | `PAYMENT.VERIFY`                     | `POST`   | `PaymentCustomerController.createPayment()`        | ✅ Supported |
+| **Payment History**                                                                               | `PAYMENT.GET(id)`                    | `GET`    | `PaymentCustomerController.getMyPayments()`        | ✅ Supported |
+| **Validate Coupon**                                                                               | `PROMOTIONS.COUPONS.VALIDATE`        | `POST`   | `CouponCustomerController.validateCoupon()`        | ✅ Supported |
+| **Redeem Gift Card**                                                                              | `PROMOTIONS.GIFT_CARDS.REDEEM(code)` | `POST`   | `GiftCardCustomerController.redeem()`              | ✅ Supported |
+| **Submit Verified Review**                                                                        | `REVIEWS.CREATE`                     | `POST`   | `ReviewCustomerController.createReview()`          | ✅ Supported |
+| **Branch Reviews Listing**                                                                        | `REVIEWS.LIST_FOR_BRANCH(bId)`       | `GET`    | `ReviewCustomerController.getMyReviews()` / Public | ✅ Supported |
+| **Vote Review Helpful**                                                                           | `REVIEWS.VOTE_HELPFUL(id)`           | `POST`   | `ReviewCustomerController.voteHelpful()`           | ✅ Supported |
+| **Notification Inbox**                                                                            | `NOTIFICATIONS.INBOX`                | `GET`    | `NotificationCustomerController.getInbox()`        | ✅ Supported |
+| **Unread Count**                                                                                  | `NOTIFICATIONS.UNREAD_COUNT`         | `GET`    | `NotificationCustomerController.getUnreadCount()`  | ✅ Supported |
+| **Mark Notification Read**                                                                        | `NOTIFICATIONS.MARK_READ(id)`        | `PATCH`  | `NotificationCustomerController.markAsRead()`      | ✅ Supported |
+| **Presigned Upload**                                                                              | `MEDIA.PRESIGNED_UPLOAD`             | `POST`   | `MediaController.initiatePresignedUpload()`        | ✅ Supported |
+| **Finalize Upload**                                                                               | `MEDIA.FINALIZE_UPLOAD(id)`          | `POST`   | `MediaController.finalizeUpload()`                 | ✅ Supported |
+
+---
+
+## 4. Screen Map & Navigation Hierarchy
+
+```
+RootNavigator (Stack)
+```
+
+├── AuthNavigator (Stack) [Unauthenticated]
+
+│   ├── WelcomeScreen (Brand splash & benefit highlights)
+
+│   ├── PhoneLoginScreen (Mobile input with +91 Indian format)
+
+│   └── OtpVerificationScreen (6-digit OTP entry with resend countdown)
+
+│
+
+└── MainTabNavigator (Bottom Tabs) [Authenticated]
+
+    │
+
+    ├── ExploreTab (Stack)
+
+    │   ├── HomeScreen (Banners, nearby salons, top services, quick book)
+
+    │   ├── SearchScreen (Filter by city, service category, price, rating)
+
+    │   ├── SalonDetailScreen (Hero gallery, branches, address, ratings, reviews)
+
+    │   └── ServiceMenuScreen (Category tabs, treatment cards, gender selector)
+
+    │
+
+    ├── BookingsTab (Stack)
+
+    │   ├── MyBookingsScreen (Tabs: Upcoming | Past | Cancelled)
+
+    │   ├── BookingDetailScreen (Service breakdown, status timeline, QR code, directions)
+
+    │   └── CancelBookingModal (Reason selection, refund policy preview)
+
+    │
+
+    ├── WalletTab (Stack)
+
+    │   ├── WalletHomeScreen (Available balance, loyalty points, tier badge)
+
+    │   ├── TransactionHistoryScreen (Credits, debits, booking cashbacks)
+
+    │   └── LoyaltyLedgerScreen (Points earned, points redeemed, expiry schedule)
+
+    │
+
+    └── ProfileTab (Stack)
+
+        ├── ProfileHomeScreen (User info, avatar, quick links, app version)
+
+        ├── EditProfileScreen (Name, email, gender, birthday, avatar upload)
+
+        ├── MembershipDetailScreen (Active plan benefits, validity)
+
+        ├── ReferralScreen (Unique referral code, share button, reward stats)
+
+        ├── NotificationCenterScreen (Inbox list, unread badge, category filter)
+
+        └── SettingsScreen (Push toggles, language, legal terms, logout)
+
+Modal Stacks (Accessible Globally)
+
+├── BookingFlowModal (6-Step Checkout Flow)
+
+│   ├── Step 1: BranchSelectionScreen (Select branch location & distance)
+
+│   ├── Step 2: ServiceSelectionScreen (Multi-select treatments & add-ons)
+
+│   ├── Step 3: StylistSelectionScreen (Select stylist or 'Any Professional')
+
+│   ├── Step 4: DateTimeSlotScreen (Calendar date picker & morning/afternoon slot grid)
+
+│   ├── Step 5: OrderSummaryScreen (GST breakdown, coupon input, wallet toggle)
+
+│   └── Step 6: PaymentConfirmationScreen (Razorpay mock/native & Booking Success)
+
+│
+
+└── ReviewSubmissionModal
+
+    └── CreateReviewScreen (Star ratings for cleanliness/staff/service, photo upload, comment)
+
+---
+
+## 5. Design System & Visual Tokens
+
+### 5.1 Color System & Aesthetic
+
+- **Theme**: Luxury Dark Glassmorphic Palette (consistent with Web Dashboard & Brand Identity).
+- **Background**: `#090D16` (Deep Obsidian / Midnight).
+- **Card / Surface**: `#111827` (`rgba(17, 24, 39, 0.85)` with subtle `1px solid rgba(255, 255, 255, 0.08)` border).
+- **Primary Accent**: `#6366F1` (Electric Indigo / Blurple).
+- **Secondary Accent**: `#A855F7` (Royal Purple).
+- **Success**: `#10B981` (Emerald Green).
+- **Warning / Star Gold**: `#F59E0B` (Amber Gold).
+- **Danger / Error**: `#EF4444` (Ruby Red).
+- **Text Primary**: `#FFFFFF` (Pure White).
+- **Text Secondary**: `#94A3B8` (Slate Muted).
+- **Text Accent**: `#818CF8` (Light Indigo).
+
+### 5.2 Typography & Spacing
+
+- **Font Families**: System Sans / Roboto (Android), San Francisco (iOS).
+- **Scale**: Display (`28px`, bold), Heading 1 (`22px`, bold), Heading 2 (`18px`, semibold), Body (`15px`, regular), Caption (`12px`, medium), Micro (`10px`, semibold).
+- **Spacing Grid**: 4px baseline (`4`, `8`, `12`, `16`, `20`, `24`, `32`, `40`).
+- **Border Radius**: Small (`8px`), Medium (`14px`), Large (`20px`), Full / Pill (`9999px`).
+
+### 5.3 Reusable Native UI Primitives (`src/components/ui/`)
+
+- `AppButton`: Variants (`primary`, `secondary`, `outline`, `ghost`, `danger`) with integrated loading spinner.
+- `AppCard`: Glassmorphic card surface with standard elevation, padding, and border glow.
+- `AppInput`: Clean text input with label, left/right icon slots, error feedback, and phone prefix support (`+91`).
+- `AppBadge`: Status pills mapping `BookingStatus` and `PaymentStatus` to semantic colors.
+- `AppHeader`: Reusable navigation bar with back button, screen title, and optional action buttons.
+- `BottomSheet`: Gesture-driven modal drawer for slot picking and filter selection.
+- `SkeletonLoader`: Pulsing skeleton placeholder for async data loading.
+- `EmptyState`: Contextual icon, title, description, and call-to-action button.
+- `Toast`: Transient feedback banner for network errors, booking confirmations, and copied referral codes.
+
+---
+
+## 6. Authentication & Secure Session Lifecycle
+
+```
+[Customer on PhoneLoginScreen]
+```
+
+       │
+
+       │ 1. Submits Phone Number (+91 9876543210)
+
+       ▼
+
+[authService.sendOtp()] ───────► POST /api/v1/auth/otp/send
+
+       │
+
+       │ 2. Enters 6-Digit OTP on OtpVerificationScreen
+
+       ▼
+
+[authService.verifyOtp()] ─────► POST /api/v1/auth/otp/verify
+
+       │
+
+       │ 3. Receives { tokens: { accessToken, refreshToken }, user }
+
+       ▼
+
+[SecureStoreTokenStorage] ────► Stores in Hardware Keychain / Keystore (expo-secure-store)
+
+       │
+
+       │ 4. Updates React AuthContext (user, isAuthenticated = true)
+
+       ▼
+
+[RootNavigator] ──────────────► Transitions from AuthStack to MainTabNavigator
+
+       │
+
+       │ 5. If Access Token Expires (401 Intercepted)
+
+       ▼
+
+[ApiClient Mutex Queue] ───────► POST /api/v1/auth/refresh (Single Flight)
+
+       │
+
+       ├──► Success: Stores Fresh Token & Automatically Retries Failed Requests
+
+       └──► Failure: Clears SecureStore & Redirects to PhoneLoginScreen
+
+---
+
+## 7. Media Integration (Phase 20/21/22 Direct Cloud Pipeline)
+
+Customer avatar updates and review photo uploads strictly use the **Presigned Direct-to-Cloud Upload Pipeline**:
+
+```
+[Customer Mobile: ImagePicker]
+```
+
+       │
+
+       │ 1. Picks photo from Camera / Library (expo-image-picker)
+
+       ▼
+
+[mediaService.initiatePresignedUpload()]
+
+       │
+
+       │ 2. POST /api/v1/media/upload/presigned ({ category, mimeType, fileSizeBytes })
+
+       ▼
+
+[@saloon/api: MediaController] ──► Generates PENDING FileAsset + Signed R2/S3 Upload URL
+
+       │
+
+       │ 3. PUT binary stream directly to Cloudflare R2 / AWS S3 (with progress)
+
+       ▼
+
+[Cloud Storage: R2 / S3]
+
+       │
+
+       │ 4. POST /api/v1/media/upload/\:id/finalize
+
+       ▼
+
+[@saloon/api: MediaController] ──► Transitions FileAsset to READY & returns publicUrl
+
+---
+
+## 8. Screen-to-API Integration Matrix
+
+| **ScreenAPI Endpoint (****`API_ROUTES`****)Request DTOResponse DTOCache / Fetch Policy** |                                                   |                                  |                                                   |                                          |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------- | ------------------------------------------------- | ---------------------------------------- |
+| **PhoneLoginScreen**                                                                     | `AUTH.SEND_OTP`                                   | `{ phone: string }`              | `ApiResponse<{ message: string }>`                | Mutation (No cache)                      |
+| **OtpVerificationScreen**                                                                | `AUTH.VERIFY_OTP`                                 | `VerifyOtpRequestDto`            | `AuthResponseDto`                                 | Mutation (Stores tokens)                 |
+| **HomeScreen**                                                                           | `SALONS.LIST` + `SERVICE_CATALOG.CATEGORIES.LIST` | None                             | `SalonDto[]`, `ServiceCategoryDto[]`              | Stale-while-revalidate / Refresh on pull |
+| **SalonDetailScreen**                                                                    | `SALONS.GET(id)` + `SALONS.BRANCHES.LIST(sId)`    | None                             | `SalonDto`, `BranchDto[]`                         | Cached by `salonId`                      |
+| **ServiceMenuScreen**                                                                    | `SERVICE_CATALOG.SERVICES.LIST`                   | `{ categoryId?: string }`        | `ServiceDto[]`                                    | Cached by `categoryId`                   |
+| **DateTimeSlotScreen**                                                                   | `BOOKING.SLOTS`                                   | `{ branchId, date, serviceIds }` | `AvailableTimeSlotDto[]`                          | Refetched on date change                 |
+| **OrderSummaryScreen**                                                                   | `PROMOTIONS.COUPONS.VALIDATE`                     | `CouponValidationRequestDto`     | `CouponValidationResponseDto`                     | On coupon apply button                   |
+| **PaymentConfirmationScreen**                                                            | `BOOKING.CREATE` + `PAYMENT.INITIATE`             | `CreateBookingRequestDto`        | `BookingDto`, `PaymentIntentDto`                  | Mutation                                 |
+| **MyBookingsScreen**                                                                     | `BOOKING.MY_BOOKINGS`                             | `PaginationQueryParams`          | `PaginatedResult<BookingSummaryDto>`              | Refresh on focus                         |
+| **BookingDetailScreen**                                                                  | `BOOKING.GET(id)`                                 | None                             | `BookingDetailDto`                                | Cached by `id`                           |
+| **CancelBookingModal**                                                                   | `BOOKING.CANCEL(id)`                              | `{ reason?: string }`            | `BookingDto`                                      | Mutation (Invalidates list)              |
+| **WalletHomeScreen**                                                                     | `CUSTOMER.WALLET` + `CUSTOMER.LOYALTY`            | None                             | `CustomerWalletLedgerDto[]`, `LoyaltyLedgerDto[]` | Refresh on tab focus                     |
+| **CreateReviewScreen**                                                                   | `REVIEWS.CREATE`                                  | `CreateReviewRequestDto`         | `ReviewDto`                                       | Mutation (Invalidates bookings)          |
+| **NotificationCenter**                                                                   | `NOTIFICATIONS.INBOX`                             | `SearchNotificationRequestDto`   | `PaginatedResult<NotificationItemDto>`            | Polled / Refresh on focus                |
+| **EditProfileScreen**                                                                    | `USERS.UPDATE_ME` + `MEDIA.PRESIGNED_UPLOAD`      | `UpdateUserProfileDto`           | `UserProfileDto`                                  | Mutation                                 |
+
+---
+
+## 9. File & Directory Structure (`apps/customer-mobile`)
+
+```
+apps/customer-mobile/
+```
+
+├── app.json                          # Expo application configuration & splash/icon assets
+
+├── package.json                      # Dependencies & scripts
+
+├── tsconfig.json                     # TypeScript configuration with @/\* path aliases
+
+├── metro.config.js                   # Metro bundler config for monorepo symlinks
+
+├── eas.json                          # Expo Application Services build configuration
+
+├── jest.config.js                    # Jest configuration for React Native Testing Library
+
+│
+
+├── assets/                           # App icons, splash screens, placeholder avatars
+
+│
+
+├── src/
+
+│   ├── navigation/
+
+│   │   ├── RootNavigator.tsx         # Main switcher (AuthStack vs MainTabNavigator)
+
+│   │   ├── AuthNavigator.tsx         # Welcome, PhoneLogin, OtpVerification
+
+│   │   ├── MainTabNavigator.tsx      # Bottom Tab Bar (Explore, Bookings, Wallet, Profile)
+
+│   │   ├── ExploreNavigator.tsx      # Home, Search, SalonDetail, ServiceMenu
+
+│   │   ├── BookingsNavigator.tsx     # MyBookings, BookingDetail, CancelModal
+
+│   │   ├── WalletNavigator.tsx       # WalletHome, Transactions, LoyaltyLedger
+
+│   │   └── ProfileNavigator.tsx      # ProfileHome, EditProfile, Notifications, Settings
+
+│   │
+
+│   ├── context/
+
+│   │   ├── AuthContext.tsx           # OTP session state, user profile, login, logout
+
+│   │   ├── BookingFlowContext.tsx    # Active booking draft (salon, branch, services, slot)
+
+│   │   └── ToastContext.tsx          # Global transient toast feedback notifications
+
+│   │
+
+│   ├── services/
+
+│   │   ├── api.service.ts            # ApiClient singleton & SecureStoreTokenStorage
+
+│   │   └── customer-domain.services.ts # Typed domain API wrappers using API\_ROUTES
+
+│   │
+
+│   ├── components/
+
+│   │   ├── ui/                       # AppButton, AppCard, AppInput, AppBadge, AppHeader, etc.
+
+│   │   ├── booking/                  # ServiceSelectorItem, SlotPickerGrid, OrderSummaryCard
+
+│   │   ├── salon/                    # SalonCard, BranchSelectorSheet, ReviewCard
+
+│   │   └── common/                   # BottomSheet, SkeletonLoader, EmptyState, Toast
+
+│   │
+
+│   ├── screens/
+
+│   │   ├── auth/                     # WelcomeScreen, PhoneLoginScreen, OtpVerificationScreen
+
+│   │   ├── explore/                  # HomeScreen, SearchScreen, SalonDetailScreen, ServiceMenuScreen
+
+│   │   ├── booking/                  # BranchSelect, ServiceSelect, SlotSelect, Summary, Confirmation
+
+│   │   ├── my-bookings/              # MyBookingsScreen, BookingDetailScreen, CancelBookingScreen
+
+│   │   ├── wallet/                   # WalletHomeScreen, TransactionHistoryScreen, LoyaltyScreen
+
+│   │   ├── profile/                  # ProfileHomeScreen, EditProfileScreen, MembershipScreen, ReferralScreen
+
+│   │   └── notifications/            # NotificationCenterScreen
+
+│   │
+
+│   ├── theme/
+
+│   │   ├── colors.ts                 # Dark glassmorphic color palette
+
+│   │   ├── typography.ts             # Font sizes, line heights, weights
+
+│   │   └── spacing.ts                # 4px modular spacing grid & radiuses
+
+│   │
+
+│   └── tests/
+
+│       ├── auth-flow\.spec.tsx        # OTP login & token storage tests
+
+│       ├── ui-primitives.spec.tsx    # Button, Card, Badge, Input rendering tests
+
+│       ├── booking-flow\.spec.tsx     # Slot selection & order summary calculation tests
+
+│       └── domain-services.spec.ts   # Customer API client integration tests
+
+---
+
+## 10. Testing Strategy
+
+1. **Unit & UI Primitive Tests (****`src/tests/ui-primitives.spec.tsx`****)**:
+   - Verify `AppButton`, `AppCard`, `AppInput`, `AppBadge`, and `SkeletonLoader` render correctly across all states (loading, disabled, error).
+2. **Authentication Flow Tests (****`src/tests/auth-flow.spec.tsx`****)**:
+   - Mock `SecureStore` and verify OTP send, OTP verify, session restoration on app launch, and logout storage purge.
+3. **Booking Flow & Calculation Tests (****`src/tests/booking-flow.spec.tsx`****)**:
+   - Test service price summing, GST calculation (`calculateGST`), coupon discount application, and slot selection state transitions.
+4. **Domain Services Integration Tests (****`src/tests/domain-services.spec.ts`****)**:
+   - Mock `ApiClient` and verify request parameters, query string serialization, and response envelope unwrapping.
+
+---
+
+## 11. Proposed Sub-Phase Breakdown
+
+| **Sub-PhaseTitleScope & Deliverables** |                                       |                                                                                                                                 |
+| -------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| **24.1**                               | **Foundation & Workspace Setup**      | Initialize `apps/customer-mobile` with Expo SDK 51, TypeScript, Metro monorepo symlinks, and package scripts.                   |
+| **24.2**                               | **Design System & Theme Tokens**      | Implement `colors.ts`, `typography.ts`, `spacing.ts`, and core UI primitives (`AppButton`, `AppCard`, `AppInput`, `AppBadge`).  |
+| **24.3**                               | **Secure Token Storage & API Client** | Implement `SecureStoreTokenStorage` using `expo-secure-store`, configure `ApiClient` singleton, and create `ToastContext`.      |
+| **24.4**                               | **Authentication & Session Flow**     | Implement `AuthContext`, `WelcomeScreen`, `PhoneLoginScreen`, and `OtpVerificationScreen` with 6-digit OTP entry and countdown. |
+| **24.5**                               | **Navigation Shell & Bottom Tabs**    | Implement `RootNavigator`, `AuthNavigator`, and `MainTabNavigator` with custom glassmorphic tab bar.                            |
+| **24.6**                               | **Salon Discovery & Home Feed**       | Implement `HomeScreen`, hero banners, top categories carousel, featured salons list, and `SearchScreen`.                        |
+| **24.7**                               | **Salon Brand & Branch Details**      | Implement `SalonDetailScreen`, branch selector sheet, location maps, operating hours, and customer review cards.                |
+| **24.8**                               | **Service Catalog & Treatment Menu**  | Implement `ServiceMenuScreen`, gender tabs (`Women`, `Men`, `Unisex`), treatment cards, and add-to-cart draft.                  |
+| **24.9**                               | **Booking Engine & Slot Selection**   | Implement `BookingFlowContext`, calendar date picker, morning/afternoon slot grid, and 10-minute temporary reservation lock.    |
+| **24.10**                              | **Order Summary, Coupons & Checkout** | Implement `OrderSummaryScreen`, coupon validator, wallet balance toggle, GST computation, and `PaymentConfirmationScreen`.      |
+| **24.11**                              | **My Bookings & Appointment Details** | Implement `MyBookingsScreen` (Upcoming / Past / Cancelled tabs), `BookingDetailScreen`, and `CancelBookingModal`.               |
+| **24.12**                              | **Customer Wallet & Loyalty Ledger**  | Implement `WalletHomeScreen`, available balance card, loyalty points ledger, membership tier card, and referral code sharing.   |
+| **24.13**                              | **Customer Profile & Account**        | Implement `ProfileHomeScreen`, `EditProfileScreen`, and customer preferences toggles.                                           |
+| **24.14**                              | **Reviews & Feedback Submission**     | Implement `CreateReviewScreen` with star rating controls, review comment input, and photo attachment uploader.                  |
+| **24.15**                              | **Notifications Center**              | Implement `NotificationCenterScreen`, unread badge count, and mark-as-read integration.                                         |
+| **24.16**                              | **Media & Avatar Integration**        | Implement profile photo upload and review attachment upload via Phase 20 presigned upload flow.                                 |
+| **24.17**                              | **Unit & Integration Testing**        | Implement comprehensive test suites in `src/tests/` with 100% green passing status.                                             |
+| **24.18**                              | **Full Verification & Sign-Off**      | Monorepo typecheck, API regression verification, and EAS build configuration validation.                                        |
+
+---
+
+## 12. Dependency Graph
+
+```
+Phase 20 (Media Engine) ──┐
+```
+
+Phase 21 (Integration)  ──┼──► Phase 22 (Shared SDK & ApiClient)
+
+                          │           │
+
+                          │           ▼
+
+                          │    Sub-Phase 24.1 (Foundation & Workspace Setup)
+
+                          │           │
+
+                          │           ▼
+
+                          │    Sub-Phase 24.2–24.5 (Theme, Storage, Auth, Navigation)
+
+                          │           │
+
+                          │           ▼
+
+                          │    Sub-Phase 24.6–24.16 (Customer Discovery, Booking & Account Views)
+
+                          │           │
+
+                          └───────────┴──► Sub-Phase 24.17–24.18 (Testing, Typecheck, Sign-Off)
+
+---
+
+## 13. Risks & Mitigations
+
+| **RiskImpactMitigation Strategy**       |                                                 |                                                                                                        |
+| --------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| **Monorepo Symlink Resolution (Metro)** | Metro failing to resolve `@saloon/shared-types` | Configure `metro.config.js` with `watchFolders` pointing to monorepo root and node\_modules.           |
+| **Expired Tokens during Checkout**      | User gets kicked out during payment             | Single-flight refresh mutex in `ApiClient` refreshes JWT transparently without losing checkout state.  |
+| **Slot Double-Booking Race Condition**  | Two users booking the same time slot            | Acquire 10-minute temporary reservation lock (`POST /customer/bookings/reservation`) prior to payment. |
+| **Hardware Keystore Unavailability**    | App crash on older devices                      | Fallback gracefully to in-memory storage if `SecureStore.isAvailableAsync()` returns false.            |
+
+---
+
+## 14. Production Acceptance Criteria (Definition of Done)
+
+Phase 24 is complete when:
+
+1. **TypeScript Typecheck**: `pnpm -r exec tsc --noEmit` passes with **0 errors** across all packages and apps.
+2. **Mobile Test Suites**: All test suites in `apps/customer-mobile` pass with **100% green status**.
+3. **End-to-End Customer Flows**:
+   - OTP phone login successfully stores tokens in `SecureStore`.
+   - Salon discovery, branch selection, and service menu browsing operate cleanly.
+   - Slot availability fetching and 6-step booking checkout flow execute with exact GST and price calculations.
+   - My Bookings listing, details, and cancellation workflows operate seamlessly.
+   - Wallet balance, loyalty points ledger, and referral code sharing render accurately.
+   - Review submission and avatar uploads execute via the Phase 20/21/22 presigned cloud storage pipeline.
+4. **Backend Regression Safety**: Full backend regression suite remains **245/245 test suites green (1,678 tests passed)**.
+5. **Monorepo Build**: `turbo run build` builds all targets cleanly.
+6. **Preservation**: Phases 1 through 23 remain completely intact and frozen.
+
+---
+
+PHASE 24 ARCHITECTURAL ANALYSIS & IMPLEMENTATION PLAN IS COMPLETE. NO IMPLEMENTATION HAS BEEN STARTED. AWAITING EXPLICIT AUTHORIZATION TO BEGIN PHASE 24 IMPLEMENTATION.
+
+
+My reply for you 
+
+AUTHORIZED — BEGIN PHASE 24 IMPLEMENTATION
+
+Proceed with Phase 24 — Customer Mobile App (apps/customer-mobile) implementation.
+
+Follow the approved Phase 24 architectural plan exactly, including Sub-Phases 24.1 through 24.18.
+
+Execution rules
+Implement the phase incrementally in sub-phase order.
+Do not skip, merge, or prematurely mark sub-phases complete.
+Before implementing each sub-phase, inspect the existing monorepo and relevant documentation/code to ensure compatibility with Phases 1–23.
+Reuse the existing:
+@saloon/shared-types
+@saloon/shared-utils
+@saloon/config
+ApiClient
+ITokenStorage
+API_ROUTES
+Phase 20/21 Media Engine
+Do not introduce duplicate DTOs, API clients, enums, or backend logic in the mobile app.
+Preserve all completed and frozen phases. No regressions or unrelated refactoring.
+Follow the planned luxury dark glassmorphic mobile design system and navigation architecture.
+Implement production-quality code, not placeholder/mock-only screens.
+Add appropriate tests as specified in the plan.
+After each meaningful sub-phase, run the relevant typechecks/tests and fix all failures before proceeding.
+Important
+
+The final implementation must satisfy the Phase 24 Definition of Done:
+
+pnpm -r exec tsc --noEmit → 0 errors
+Customer mobile test suites → 100% passing
+Complete customer authentication, discovery, salon, service, booking, checkout, payment, bookings, wallet, loyalty, profile, reviews, notifications, and media flows
+Backend regression → 245/245 suites and 1,678 tests passing (or report the exact updated baseline if the repository has legitimately changed)
+turbo run build → PASS
+Phases 1–23 remain intact
+Strict execution mode
+
+Do not stop after creating the architecture or scaffolding. Actually implement the phase.
+
+When implementation is complete, stop and provide a detailed PHASE 24 COMPLETION & PRODUCTION VERIFICATION REPORT containing:
+
+Sub-phases 24.1–24.18 status
+Files created/modified
+Major features implemented
+Test results
+Typecheck results
+Build results
+Backend regression results
+Any deviations from the approved plan
+Final production-readiness status
+
+Begin with Sub-Phase 24.1 now.
+
+Follow best Ui ux practices
