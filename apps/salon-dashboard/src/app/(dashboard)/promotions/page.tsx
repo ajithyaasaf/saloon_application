@@ -24,13 +24,13 @@ export default function PromotionsPage() {
   // Coupon Form
   const [code, setCode] = useState('DIWALI25');
   const [name, setName] = useState('Diwali Festival Special');
-  const [discountValue, setDiscountValue] = useState(25);
-  const [minBookingAmount, setMinBookingAmount] = useState(1000);
+  const [discountValue, setDiscountValue] = useState<number | string>(25);
+  const [minBookingAmount, setMinBookingAmount] = useState<number | string>(1000);
 
   // Flash Sale Form
   const [flashTitle, setFlashTitle] = useState('Happy Hours Flash Deal');
-  const [flashDiscount, setFlashDiscount] = useState(30);
-  const [flashHours, setFlashHours] = useState(4);
+  const [flashDiscount, setFlashDiscount] = useState<number | string>(30);
+  const [flashHours, setFlashHours] = useState<number | string>(4);
 
   const loadData = async () => {
     try {
@@ -59,8 +59,8 @@ export default function PromotionsPage() {
         code: code.toUpperCase(),
         name,
         discountType: DiscountType.PERCENTAGE,
-        discountValue: Number(discountValue),
-        minBookingAmount: Number(minBookingAmount),
+        discountValue: Number(discountValue) || 0,
+        minBookingAmount: Number(minBookingAmount) || 0,
         perCustomerLimit: 1,
         validFrom: new Date().toISOString(),
         validUntil: new Date(Date.now() + 30 * 86400000).toISOString(),
@@ -89,11 +89,11 @@ export default function PromotionsPage() {
     setIsSubmitting(true);
     try {
       const startTime = new Date();
-      const endTime = new Date(Date.now() + Number(flashHours) * 3600000);
+      const endTime = new Date(Date.now() + (Number(flashHours) || 1) * 3600000);
       await promotionsService.createFlashSale({
         salonId: salon.id,
         title: flashTitle,
-        discountPercentage: Number(flashDiscount),
+        discountPercentage: Number(flashDiscount) || 0,
         startTime: startTime.toISOString(),
         endTime: endTime.toISOString(),
         serviceIds: [],
@@ -255,8 +255,8 @@ export default function PromotionsPage() {
           <Input label="Campaign Name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Summer Haircut Deal" />
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input label="Discount Percentage (%)" type="number" required value={discountValue} onChange={(e) => setDiscountValue(Number(e.target.value))} />
-            <Input label="Min Booking Amount (INR)" type="number" required value={minBookingAmount} onChange={(e) => setMinBookingAmount(Number(e.target.value))} />
+            <Input label="Discount Percentage (%)" type="number" required value={discountValue} onChange={(e) => setDiscountValue(e.target.value === '' ? '' : Number(e.target.value))} />
+            <Input label="Min Booking Amount (INR)" type="number" required value={minBookingAmount} onChange={(e) => setMinBookingAmount(e.target.value === '' ? '' : Number(e.target.value))} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
@@ -271,8 +271,8 @@ export default function PromotionsPage() {
         <form onSubmit={handleCreateFlashSale}>
           <Input label="Deal Name" required value={flashTitle} onChange={(e) => setFlashTitle(e.target.value)} placeholder="e.g. Afternoon Happy Hours" />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input label="Discount Percentage (%)" type="number" required value={flashDiscount} onChange={(e) => setFlashDiscount(Number(e.target.value))} />
-            <Input label="Duration (Hours from now)" type="number" required value={flashHours} onChange={(e) => setFlashHours(Number(e.target.value))} />
+            <Input label="Discount Percentage (%)" type="number" required value={flashDiscount} onChange={(e) => setFlashDiscount(e.target.value === '' ? '' : Number(e.target.value))} />
+            <Input label="Duration (Hours from now)" type="number" required value={flashHours} onChange={(e) => setFlashHours(e.target.value === '' ? '' : Number(e.target.value))} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>

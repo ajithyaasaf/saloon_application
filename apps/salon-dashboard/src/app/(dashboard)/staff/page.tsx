@@ -27,7 +27,7 @@ export default function StaffPage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [title, setTitle] = useState('Senior Hair Stylist');
-  const [commissionRate, setCommissionRate] = useState(15);
+  const [commissionRate, setCommissionRate] = useState<number | string>(15);
 
   // Shift Form
   const [shiftStart, setShiftStart] = useState('09:00');
@@ -76,7 +76,7 @@ export default function StaffPage() {
         phone,
         email,
         title,
-        commissionRate: Number(commissionRate),
+        commissionRate: Number(commissionRate) || 0,
         primaryBranchId: selectedBranch.id,
       });
       setIsAddStaffOpen(false);
@@ -192,7 +192,7 @@ export default function StaffPage() {
           
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input label="Job Title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Master Colorist" />
-            <Input label="Commission %" type="number" required value={commissionRate} onChange={(e) => setCommissionRate(Number(e.target.value))} />
+            <Input label="Commission %" type="number" required value={commissionRate} onChange={(e) => setCommissionRate(e.target.value === '' ? '' : Number(e.target.value))} />
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>

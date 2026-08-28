@@ -23,18 +23,18 @@ export default function InventoryPage() {
   // New Product Form
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
-  const [retailPrice, setRetailPrice] = useState(499);
-  const [costPrice, setCostPrice] = useState(250);
+  const [retailPrice, setRetailPrice] = useState<number | string>(499);
+  const [costPrice, setCostPrice] = useState<number | string>(250);
   const [isForRetail, setIsForRetail] = useState(true);
-  const [minStockAlertLevel, setMinStockAlertLevel] = useState(5);
+  const [minStockAlertLevel, setMinStockAlertLevel] = useState<number | string>(5);
 
   // Edit Product Form
   const [editName, setEditName] = useState('');
   const [editSku, setEditSku] = useState('');
-  const [editRetailPrice, setEditRetailPrice] = useState(499);
-  const [editCostPrice, setEditCostPrice] = useState(250);
+  const [editRetailPrice, setEditRetailPrice] = useState<number | string>(499);
+  const [editCostPrice, setEditCostPrice] = useState<number | string>(250);
   const [editIsForRetail, setEditIsForRetail] = useState(true);
-  const [editMinStockAlertLevel, setEditMinStockAlertLevel] = useState(5);
+  const [editMinStockAlertLevel, setEditMinStockAlertLevel] = useState<number | string>(5);
   const [editIsActive, setEditIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -71,10 +71,10 @@ export default function InventoryPage() {
         salonId: salon?.id,
         name,
         sku,
-        retailPrice: Number(retailPrice),
-        costPrice: Number(costPrice),
+        retailPrice: Number(retailPrice) || 0,
+        costPrice: Number(costPrice) || 0,
         isForRetail,
-        minStockAlertLevel: Number(minStockAlertLevel),
+        minStockAlertLevel: Number(minStockAlertLevel) || 0,
       });
       setIsAddProductOpen(false);
       setName('');
@@ -95,10 +95,10 @@ export default function InventoryPage() {
       await inventoryService.updateProduct(selectedProduct.id, {
         name: editName,
         sku: editSku,
-        retailPrice: Number(editRetailPrice),
-        costPrice: Number(editCostPrice),
+        retailPrice: Number(editRetailPrice) || 0,
+        costPrice: Number(editCostPrice) || 0,
         isForRetail: editIsForRetail,
-        minStockAlertLevel: Number(editMinStockAlertLevel),
+        minStockAlertLevel: Number(editMinStockAlertLevel) || 0,
         isActive: editIsActive,
       });
       setIsEditProductOpen(false);
@@ -205,10 +205,10 @@ export default function InventoryPage() {
           <Input label="Product Name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Moroccan Oil Treatment 100ml" />
           <Input label="SKU / Barcode" required value={sku} onChange={(e) => setSku(e.target.value)} placeholder="e.g. MOR-OIL-100" />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input label="Retail Price (INR)" type="number" required value={retailPrice} onChange={(e) => setRetailPrice(Number(e.target.value))} />
-            <Input label="Cost Price (INR)" type="number" required value={costPrice} onChange={(e) => setCostPrice(Number(e.target.value))} />
+            <Input label="Retail Price (INR)" type="number" required value={retailPrice} onChange={(e) => setRetailPrice(e.target.value === '' ? '' : Number(e.target.value))} />
+            <Input label="Cost Price (INR)" type="number" required value={costPrice} onChange={(e) => setCostPrice(e.target.value === '' ? '' : Number(e.target.value))} />
           </div>
-          <Input label="Low Stock Alert Level" type="number" required value={minStockAlertLevel} onChange={(e) => setMinStockAlertLevel(Number(e.target.value))} />
+          <Input label="Low Stock Alert Level" type="number" required value={minStockAlertLevel} onChange={(e) => setMinStockAlertLevel(e.target.value === '' ? '' : Number(e.target.value))} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
             <input type="checkbox" id="isForRetail" checked={isForRetail} onChange={(e) => setIsForRetail(e.target.checked)} />
             <label htmlFor="isForRetail" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>Available for Retail Client Purchase</label>
@@ -226,10 +226,10 @@ export default function InventoryPage() {
           <Input label="Product Name" required value={editName} onChange={(e) => setEditName(e.target.value)} />
           <Input label="SKU / Barcode" required value={editSku} onChange={(e) => setEditSku(e.target.value)} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input label="Retail Price (INR)" type="number" required value={editRetailPrice} onChange={(e) => setEditRetailPrice(Number(e.target.value))} />
-            <Input label="Cost Price (INR)" type="number" required value={editCostPrice} onChange={(e) => setEditCostPrice(Number(e.target.value))} />
+            <Input label="Retail Price (INR)" type="number" required value={editRetailPrice} onChange={(e) => setEditRetailPrice(e.target.value === '' ? '' : Number(e.target.value))} />
+            <Input label="Cost Price (INR)" type="number" required value={editCostPrice} onChange={(e) => setEditCostPrice(e.target.value === '' ? '' : Number(e.target.value))} />
           </div>
-          <Input label="Low Stock Alert Level" type="number" required value={editMinStockAlertLevel} onChange={(e) => setEditMinStockAlertLevel(Number(e.target.value))} />
+          <Input label="Low Stock Alert Level" type="number" required value={editMinStockAlertLevel} onChange={(e) => setEditMinStockAlertLevel(e.target.value === '' ? '' : Number(e.target.value))} />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
             <input type="checkbox" id="editIsActive" checked={editIsActive} onChange={(e) => setEditIsActive(e.target.checked)} />
             <label htmlFor="editIsActive" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>Product SKU is Active & In-Stock</label>

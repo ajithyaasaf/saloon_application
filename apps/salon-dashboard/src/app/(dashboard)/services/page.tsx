@@ -23,8 +23,8 @@ export default function ServicesPage() {
   // New Service Form
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [basePrice, setBasePrice] = useState(799);
-  const [durationMinutes, setDurationMinutes] = useState(45);
+  const [basePrice, setBasePrice] = useState<number | string>(799);
+  const [durationMinutes, setDurationMinutes] = useState<number | string>(45);
   const [targetGender, setTargetGender] = useState<Gender>(Gender.OTHER);
 
   // New Category Form
@@ -35,8 +35,8 @@ export default function ServicesPage() {
   const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
   const [editName, setEditName] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
-  const [editBasePrice, setEditBasePrice] = useState(799);
-  const [editDurationMinutes, setEditDurationMinutes] = useState(45);
+  const [editBasePrice, setEditBasePrice] = useState<number | string>(799);
+  const [editDurationMinutes, setEditDurationMinutes] = useState<number | string>(45);
   const [editTargetGender, setEditTargetGender] = useState<Gender>(Gender.OTHER);
   const [editIsActive, setEditIsActive] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,8 +78,8 @@ export default function ServicesPage() {
       await catalogService.createService({
         categoryId,
         name,
-        basePrice: Number(basePrice),
-        durationMinutes: Number(durationMinutes),
+        basePrice: Number(basePrice) || 0,
+        durationMinutes: Number(durationMinutes) || 0,
         targetGender,
       });
       setIsAddServiceOpen(false);
@@ -100,8 +100,8 @@ export default function ServicesPage() {
       await catalogService.updateService(selectedService.id, {
         categoryId: editCategoryId,
         name: editName,
-        basePrice: Number(editBasePrice),
-        durationMinutes: Number(editDurationMinutes),
+        basePrice: Number(editBasePrice) || 0,
+        durationMinutes: Number(editDurationMinutes) || 0,
         targetGender: editTargetGender,
         isActive: editIsActive,
       });
@@ -243,14 +243,14 @@ export default function ServicesPage() {
               type="number"
               required
               value={editBasePrice}
-              onChange={(e) => setEditBasePrice(Number(e.target.value))}
+              onChange={(e) => setEditBasePrice(e.target.value === '' ? '' : Number(e.target.value))}
             />
             <Input
               label="Duration (Minutes)"
               type="number"
               required
               value={editDurationMinutes}
-              onChange={(e) => setEditDurationMinutes(Number(e.target.value))}
+              onChange={(e) => setEditDurationMinutes(e.target.value === '' ? '' : Number(e.target.value))}
             />
           </div>
 
@@ -312,8 +312,8 @@ export default function ServicesPage() {
           />
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input label="Base Price (INR)" type="number" required value={basePrice} onChange={(e) => setBasePrice(Number(e.target.value))} />
-            <Input label="Duration (Minutes)" type="number" required value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} />
+            <Input label="Base Price (INR)" type="number" required value={basePrice} onChange={(e) => setBasePrice(e.target.value === '' ? '' : Number(e.target.value))} />
+            <Input label="Duration (Minutes)" type="number" required value={durationMinutes} onChange={(e) => setDurationMinutes(e.target.value === '' ? '' : Number(e.target.value))} />
           </div>
 
           <Select
