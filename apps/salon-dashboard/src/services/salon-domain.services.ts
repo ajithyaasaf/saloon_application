@@ -251,10 +251,19 @@ export const promotionsService = {
     return res.data;
   },
 
+  async deleteCoupon(id: string): Promise<void> {
+    await apiClient.delete(API_ROUTES.PROMOTIONS.COUPONS.DELETE(id));
+  },
+
   async getFlashSales(salonId?: string): Promise<FlashSaleDto[]> {
     const res = await apiClient.get<FlashSaleDto[]>(API_ROUTES.PROMOTIONS.FLASH_SALES.LIST, {
       params: salonId ? { salonId } : undefined,
     });
+    return res.data;
+  },
+
+  async createFlashSale(data: any): Promise<FlashSaleDto> {
+    const res = await apiClient.post<FlashSaleDto>(API_ROUTES.PROMOTIONS.FLASH_SALES.CREATE, data);
     return res.data;
   },
 };

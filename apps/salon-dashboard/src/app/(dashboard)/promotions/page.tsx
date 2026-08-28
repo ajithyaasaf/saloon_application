@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { CouponDto, DiscountType } from '@saloon/shared-types';
+import { CouponDto, DiscountType, FlashSaleDto } from '@saloon/shared-types';
 import { formatINR } from '@saloon/shared-utils';
-import { Gift, Plus, Sparkles, Tag, Zap } from 'lucide-react';
+import { Gift, Plus, Sparkles, Tag, Trash2, Zap } from 'lucide-react';
 import { useSalon } from '../../../context/SalonContext.js';
 import { promotionsService } from '../../../services/salon-domain.services.js';
 import { Card } from '../../../components/ui/Card.js';
@@ -14,31 +14,45 @@ import { Input } from '../../../components/ui/Input.js';
 
 export default function PromotionsPage() {
   const { salon } = useSalon();
+  const [activeTab, setActiveTab] = useState<'COUPONS' | 'FLASH_SALES'>('COUPONS');
   const [coupons, setCoupons] = useState<CouponDto[]>([]);
+  const [flashSales, setFlashSales] = useState<FlashSaleDto[]>([]);
   const [isAddCouponOpen, setIsAddCouponOpen] = useState(false);
+  const [isAddFlashSaleOpen, setIsAddFlashSaleOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Form
+  // Coupon Form
   const [code, setCode] = useState('DIWALI25');
   const [name, setName] = useState('Diwali Festival Special');
   const [discountValue, setDiscountValue] = useState(25);
   const [minBookingAmount, setMinBookingAmount] = useState(1000);
 
-  const loadCoupons = async () => {
+  // Flash Sale Form
+  const [flashTitle, setFlashTitle] = useState('Happy Hours Flash Deal');
+  const [flashDiscount, setFlashDiscount] = useState(30);
+  const [flashHours, setFlashHours] = useState(4);
+
+  const loadData = async () => {
     try {
-      const data = await promotionsService.getCoupons(salon?.id);
-      setCoupons(data || []);
+      const [couponData, flashData] = await Promise.all([
+        promotionsService.getCoupons(salon?.id),
+        promotionsService.getFlashSales(salon?.id),
+      ]);
+      setCoupons(couponData || []);
+      setFlashSales(flashData || []);
     } catch (err) {
       console.error('Failed to load promotions:', err);
     }
   };
 
   useEffect(() => {
-    loadCoupons();
+    loadData();
   }, [salon?.id]);
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!salon) return;
+    setIsSubmitting(true);
     try {
       await promotionsService.createCoupon({
         salonId: salon.id,
@@ -52,9 +66,44 @@ export default function PromotionsPage() {
         validUntil: new Date(Date.now() + 30 * 86400000).toISOString(),
       });
       setIsAddCouponOpen(false);
-      await loadCoupons();
+      await loadData();
     } catch (err) {
       console.error('Failed to create coupon:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteCoupon = async (couponId: string) => {
+    try {
+      await promotionsService.deleteCoupon(couponId);
+      await loadData();
+    } catch (err) {
+      console.error('Failed to delete coupon:', err);
+    }
+  };
+
+  const handleCreateFlashSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!salon) return;
+    setIsSubmitting(true);
+    try {
+      const startTime = new Date();
+      const endTime = new Date(Date.now() + Number(flashHours) * 3600000);
+      await promotionsService.createFlashSale({
+        salonId: salon.id,
+        title: flashTitle,
+        discountPercentage: Number(flashDiscount),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        serviceIds: [],
+      });
+      setIsAddFlashSaleOpen(false);
+      await loadData();
+    } catch (err) {
+      console.error('Failed to create flash sale:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -67,58 +116,137 @@ export default function PromotionsPage() {
             Boost client retention with discount promo codes, auto-apply deals, and urgent flash sales
           </p>
         </div>
-        <Button variant="primary" leftIcon={<Plus size={16} />} onClick={() => setIsAddCouponOpen(true)}>
-          Create Campaign Code
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          {activeTab === 'COUPONS' ? (
+            <Button variant="primary" leftIcon={<Plus size={16} />} onClick={() => setIsAddCouponOpen(true)}>
+              Create Campaign Code
+            </Button>
+          ) : (
+            <Button variant="primary" leftIcon={<Zap size={16} />} onClick={() => setIsAddFlashSaleOpen(true)}>
+              Launch Flash Sale
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
+        <Button
+          variant={activeTab === 'COUPONS' ? 'primary' : 'secondary'}
+          size="sm"
+          leftIcon={<Tag size={14} />}
+          onClick={() => setActiveTab('COUPONS')}
+        >
+          Promo Coupons ({coupons.length})
+        </Button>
+        <Button
+          variant={activeTab === 'FLASH_SALES' ? 'primary' : 'secondary'}
+          size="sm"
+          leftIcon={<Zap size={14} />}
+          onClick={() => setActiveTab('FLASH_SALES')}
+        >
+          Urgent Flash Deals ({flashSales.length})
         </Button>
       </div>
 
-      {/* Coupons Table */}
-      <Card title="Active Promotional Codes" subtitle="Discount codes applicable at checkout">
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Coupon Code</th>
-                <th>Campaign Name</th>
-                <th>Discount</th>
-                <th>Min Spend</th>
-                <th>Usage Limit</th>
-                <th>Redemptions</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {coupons.length === 0 ? (
+      {/* Coupons View */}
+      {activeTab === 'COUPONS' && (
+        <Card title="Active Promotional Codes" subtitle="Discount codes applicable at checkout">
+          <div className="data-table-wrapper">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                    No promo codes created yet. Click "Create Campaign Code" above.
-                  </td>
+                  <th>Coupon Code</th>
+                  <th>Campaign Name</th>
+                  <th>Discount</th>
+                  <th>Min Spend</th>
+                  <th>Usage Limit</th>
+                  <th>Redemptions</th>
+                  <th>Status</th>
+                  <th>Actions</th>
                 </tr>
-              ) : (
-                coupons.map((c) => (
-                  <tr key={c.id}>
-                    <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-accent)' }}>
-                      {c.code}
-                    </td>
-                    <td>{c.name}</td>
-                    <td style={{ fontWeight: 600 }}>
-                      {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% OFF` : formatINR(c.discountValue)}
-                    </td>
-                    <td>{c.minBookingAmount ? formatINR(c.minBookingAmount) : 'None'}</td>
-                    <td>{c.perCustomerLimit} / client</td>
-                    <td>{c.timesUsed || 0}</td>
-                    <td>
-                      <Badge variant={c.isActive ? 'success' : 'warning'}>
-                        {c.isActive ? 'Active' : 'Expired'}
-                      </Badge>
+              </thead>
+              <tbody>
+                {coupons.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                      No promo codes created yet. Click "Create Campaign Code" above.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : (
+                  coupons.map((c) => (
+                    <tr key={c.id}>
+                      <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-accent)' }}>
+                        {c.code}
+                      </td>
+                      <td>{c.name}</td>
+                      <td style={{ fontWeight: 600 }}>
+                        {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% OFF` : formatINR(c.discountValue)}
+                      </td>
+                      <td>{c.minBookingAmount ? formatINR(c.minBookingAmount) : 'None'}</td>
+                      <td>{c.perCustomerLimit} / client</td>
+                      <td>{c.timesUsed || 0}</td>
+                      <td>
+                        <Badge variant={c.isActive ? 'success' : 'warning'}>
+                          {c.isActive ? 'Active' : 'Expired'}
+                        </Badge>
+                      </td>
+                      <td>
+                        <Button
+                          variant="danger"
+                          size="sm"
+                          leftIcon={<Trash2 size={12} />}
+                          onClick={() => handleDeleteCoupon(c.id)}
+                        >
+                          Delete
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+
+      {/* Flash Sales View */}
+      {activeTab === 'FLASH_SALES' && (
+        <Card title="Live Flash Deals" subtitle="Limited-time slot discounts to drive off-peak demand">
+          <div className="data-table-wrapper">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Flash Sale Title</th>
+                  <th>Discount Rate</th>
+                  <th>Window Duration</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {flashSales.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                      No active flash deals right now. Click "Launch Flash Sale" above.
+                    </td>
+                  </tr>
+                ) : (
+                  flashSales.map((fs) => (
+                    <tr key={fs.id}>
+                      <td style={{ fontWeight: 600 }}>{fs.title}</td>
+                      <td style={{ fontWeight: 700, color: 'var(--success)' }}>{fs.discountPercentage}% OFF</td>
+                      <td>{new Date(fs.startTime).toLocaleTimeString()} – {new Date(fs.endTime).toLocaleTimeString()}</td>
+                      <td>
+                        <Badge variant={fs.status === 'ACTIVE' ? 'success' : 'warning'}>{fs.status}</Badge>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Create Coupon Modal */}
       <Modal isOpen={isAddCouponOpen} onClose={() => setIsAddCouponOpen(false)} title="Create Discount Coupon">
@@ -133,7 +261,23 @@ export default function PromotionsPage() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <Button variant="secondary" type="button" onClick={() => setIsAddCouponOpen(false)}>Cancel</Button>
-            <Button variant="primary" type="submit">Launch Promo</Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Launching...' : 'Launch Promo'}</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Create Flash Sale Modal */}
+      <Modal isOpen={isAddFlashSaleOpen} onClose={() => setIsAddFlashSaleOpen(false)} title="Launch Urgent Flash Deal">
+        <form onSubmit={handleCreateFlashSale}>
+          <Input label="Deal Name" required value={flashTitle} onChange={(e) => setFlashTitle(e.target.value)} placeholder="e.g. Afternoon Happy Hours" />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <Input label="Discount Percentage (%)" type="number" required value={flashDiscount} onChange={(e) => setFlashDiscount(Number(e.target.value))} />
+            <Input label="Duration (Hours from now)" type="number" required value={flashHours} onChange={(e) => setFlashHours(Number(e.target.value))} />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+            <Button variant="secondary" type="button" onClick={() => setIsAddFlashSaleOpen(false)}>Cancel</Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Starting...' : 'Activate Flash Deal'}</Button>
           </div>
         </form>
       </Modal>
