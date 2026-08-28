@@ -30,6 +30,17 @@ export default function ServicesPage() {
   // New Category Form
   const [categoryName, setCategoryName] = useState('');
 
+  // Edit Service Form
+  const [isEditServiceOpen, setIsEditServiceOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceDto | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState('');
+  const [editBasePrice, setEditBasePrice] = useState(799);
+  const [editDurationMinutes, setEditDurationMinutes] = useState(45);
+  const [editTargetGender, setEditTargetGender] = useState<Gender>(Gender.OTHER);
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const loadCatalog = async () => {
     try {
       const cats = await catalogService.getCategories();
@@ -49,8 +60,20 @@ export default function ServicesPage() {
     loadCatalog();
   }, [salon?.id]);
 
+  const handleOpenEdit = (srv: ServiceDto) => {
+    setSelectedService(srv);
+    setEditName(srv.name || '');
+    setEditCategoryId(srv.categoryId || (categories[0]?.id ?? ''));
+    setEditBasePrice(srv.basePrice ?? 0);
+    setEditDurationMinutes(srv.durationMinutes ?? 30);
+    setEditTargetGender((srv.targetGender as Gender) || Gender.OTHER);
+    setEditIsActive(srv.isActive !== false);
+    setIsEditServiceOpen(true);
+  };
+
   const handleCreateService = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await catalogService.createService({
         categoryId,
@@ -64,11 +87,52 @@ export default function ServicesPage() {
       await loadCatalog();
     } catch (err) {
       console.error('Failed to create service:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateService = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedService) return;
+    setIsSubmitting(true);
+    try {
+      await catalogService.updateService(selectedService.id, {
+        categoryId: editCategoryId,
+        name: editName,
+        basePrice: Number(editBasePrice),
+        durationMinutes: Number(editDurationMinutes),
+        targetGender: editTargetGender,
+        isActive: editIsActive,
+      });
+      setIsEditServiceOpen(false);
+      setSelectedService(null);
+      await loadCatalog();
+    } catch (err) {
+      console.error('Failed to update service:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteService = async () => {
+    if (!selectedService || !confirm(`Are you sure you want to delete "${selectedService.name}"?`)) return;
+    setIsSubmitting(true);
+    try {
+      await catalogService.deleteService(selectedService.id);
+      setIsEditServiceOpen(false);
+      setSelectedService(null);
+      await loadCatalog();
+    } catch (err) {
+      console.error('Failed to delete service:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await catalogService.createCategory({ name: categoryName });
       setIsAddCategoryOpen(false);
@@ -76,6 +140,8 @@ export default function ServicesPage() {
       await loadCatalog();
     } catch (err) {
       console.error('Failed to create category:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -126,17 +192,22 @@ export default function ServicesPage() {
                     <td style={{ fontWeight: 600 }}>{srv.name}</td>
                     <td>{srv.categoryName || 'Hair & Styling'}</td>
                     <td>
-                      <Badge variant="primary">{srv.targetGender}</Badge>
+                      <Badge variant="primary">{srv.targetGender || 'ALL'}</Badge>
                     </td>
-                    <td style={{ fontWeight: 700 }}>{formatINR(srv.basePrice)}</td>
-                    <td>{formatDuration(srv.durationMinutes)}</td>
+                    <td style={{ fontWeight: 700 }}>{formatINR(srv.basePrice || 0)}</td>
+                    <td>{formatDuration(srv.durationMinutes || 30)}</td>
                     <td>
-                      <Badge variant={srv.isActive ? 'success' : 'warning'}>
-                        {srv.isActive ? 'Active' : 'Inactive'}
+                      <Badge variant={srv.isActive !== false ? 'success' : 'warning'}>
+                        {srv.isActive !== false ? 'Active' : 'Inactive'}
                       </Badge>
                     </td>
                     <td>
-                      <Button variant="secondary" size="sm" leftIcon={<Edit2 size={12} />}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<Edit2 size={12} />}
+                        onClick={() => handleOpenEdit(srv)}
+                      >
                         Edit
                       </Button>
                     </td>
@@ -147,6 +218,86 @@ export default function ServicesPage() {
           </table>
         </div>
       </Card>
+
+      {/* Edit Service Modal */}
+      <Modal isOpen={isEditServiceOpen} onClose={() => setIsEditServiceOpen(false)} title={`Edit Treatment: ${selectedService?.name || ''}`}>
+        <form onSubmit={handleUpdateService}>
+          <Input
+            label="Service / Treatment Name"
+            required
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            placeholder="e.g. Keratin Hair Spa & Treatment"
+          />
+          
+          <Select
+            label="Service Category"
+            value={editCategoryId}
+            onChange={(e) => setEditCategoryId(e.target.value)}
+            options={categories.map((c) => ({ value: c.id, label: c.name }))}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <Input
+              label="Base Price (INR)"
+              type="number"
+              required
+              value={editBasePrice}
+              onChange={(e) => setEditBasePrice(Number(e.target.value))}
+            />
+            <Input
+              label="Duration (Minutes)"
+              type="number"
+              required
+              value={editDurationMinutes}
+              onChange={(e) => setEditDurationMinutes(Number(e.target.value))}
+            />
+          </div>
+
+          <Select
+            label="Target Audience / Gender"
+            value={editTargetGender}
+            onChange={(e) => setEditTargetGender(e.target.value as Gender)}
+            options={[
+              { value: Gender.FEMALE, label: 'Women' },
+              { value: Gender.MALE, label: 'Men' },
+              { value: Gender.OTHER, label: 'Unisex / All' },
+            ]}
+          />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.75rem' }}>
+            <input
+              type="checkbox"
+              id="serviceIsActive"
+              checked={editIsActive}
+              onChange={(e) => setEditIsActive(e.target.checked)}
+              style={{ width: '1rem', height: '1rem', cursor: 'pointer' }}
+            />
+            <label htmlFor="serviceIsActive" style={{ fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer' }}>
+              Service is Active & Bookable by Clients
+            </label>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem' }}>
+            <Button
+              variant="danger"
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleDeleteService}
+            >
+              Delete Service
+            </Button>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <Button variant="secondary" type="button" onClick={() => setIsEditServiceOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="primary" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Modal>
 
       {/* Add Service Modal */}
       <Modal isOpen={isAddServiceOpen} onClose={() => setIsAddServiceOpen(false)} title="Create New Treatment Service">
@@ -178,7 +329,9 @@ export default function ServicesPage() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <Button variant="secondary" type="button" onClick={() => setIsAddServiceOpen(false)}>Cancel</Button>
-            <Button variant="primary" type="submit">Publish Treatment</Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Publishing...' : 'Publish Treatment'}
+            </Button>
           </div>
         </form>
       </Modal>
@@ -189,7 +342,9 @@ export default function ServicesPage() {
           <Input label="Category Name" required value={categoryName} onChange={(e) => setCategoryName(e.target.value)} placeholder="e.g. Hair Care, Skin & Facials, Massage" />
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <Button variant="secondary" type="button" onClick={() => setIsAddCategoryOpen(false)}>Cancel</Button>
-            <Button variant="primary" type="submit">Create Category</Button>
+            <Button variant="primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Creating...' : 'Create Category'}
+            </Button>
           </div>
         </form>
       </Modal>

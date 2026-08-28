@@ -152,6 +152,15 @@ export const catalogService = {
     return res.data;
   },
 
+  async updateService(id: string, data: Partial<CreateServiceRequestDto> & { isActive?: boolean }): Promise<ServiceDto> {
+    const res = await apiClient.patch<ServiceDto>(API_ROUTES.SERVICE_CATALOG.SERVICES.UPDATE(id), data);
+    return res.data;
+  },
+
+  async deleteService(id: string): Promise<void> {
+    await apiClient.delete(API_ROUTES.SERVICE_CATALOG.SERVICES.DELETE(id));
+  },
+
   async configureBranchPricing(
     branchId: string,
     serviceId: string,
@@ -195,6 +204,20 @@ export const inventoryService = {
       params: salonId ? { salonId } : undefined,
     });
     return res.data;
+  },
+
+  async createProduct(data: any): Promise<ProductDto> {
+    const res = await apiClient.post<ProductDto>(API_ROUTES.INVENTORY.PRODUCTS.CREATE, data);
+    return res.data;
+  },
+
+  async updateProduct(id: string, data: any): Promise<ProductDto> {
+    const res = await apiClient.patch<ProductDto>(API_ROUTES.INVENTORY.PRODUCTS.UPDATE(id), data);
+    return res.data;
+  },
+
+  async deleteProduct(id: string): Promise<void> {
+    await apiClient.delete(API_ROUTES.INVENTORY.PRODUCTS.DELETE(id));
   },
 
   async getBranchStock(branchId: string): Promise<BranchProductStockDto[]> {
