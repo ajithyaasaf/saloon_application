@@ -22,7 +22,7 @@ export const availableThemes: Record<string, ThemeDefinition> = {
   'customer-purple': customerPurpleTheme,
 };
 
-export const defaultTheme: ThemeDefinition = luxuryNoirTheme;
+export const defaultTheme: ThemeDefinition = lightMinimalTheme;
 
 export function getThemeById(themeId: string): ThemeDefinition {
   return availableThemes[themeId] || defaultTheme;

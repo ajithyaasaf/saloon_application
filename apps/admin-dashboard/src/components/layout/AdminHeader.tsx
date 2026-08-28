@@ -2,14 +2,12 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { Breadcrumbs } from './Breadcrumbs';
-import { ShieldCheck, LogOut, User, Palette } from 'lucide-react';
+import { ShieldCheck, LogOut, User } from 'lucide-react';
 import { AppBadge } from '../ui/AppBadge';
 
 export const AdminHeader: React.FC = () => {
   const { user, logout } = useAuth();
-  const { activeThemeId, setTheme } = useTheme();
 
   return (
     <header
@@ -30,45 +28,6 @@ export const AdminHeader: React.FC = () => {
       <Breadcrumbs />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-        {/* Centralized Theme Switcher Control */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            background: 'var(--input-background)',
-            border: '1px solid var(--input-border)',
-            padding: '0.35rem 0.75rem',
-            borderRadius: 'var(--radius-md)',
-          }}
-        >
-          <Palette size={15} style={{ color: 'var(--color-action-primary)' }} />
-          <select
-            value={activeThemeId}
-            onChange={(e) => setTheme(e.target.value)}
-            aria-label="Select Theme"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-text-primary)',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="luxury-noir" style={{ background: 'var(--color-background-elevated)', color: 'var(--color-text-primary)' }}>
-              Luxury Noir & Gold
-            </option>
-            <option value="botanical" style={{ background: 'var(--color-background-elevated)', color: 'var(--color-text-primary)' }}>
-              Emerald Botanical
-            </option>
-            <option value="light-minimal" style={{ background: 'var(--color-background-elevated)', color: 'var(--color-text-primary)' }}>
-              Light Minimal / Ivory
-            </option>
-          </select>
-        </div>
-
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <ShieldCheck size={16} color="var(--color-action-primary)" />
           <AppBadge variant="primary" dot>

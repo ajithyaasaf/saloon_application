@@ -1,16 +1,14 @@
 'use client';
 
 import React from 'react';
-import { Bell, MapPin, Store, Palette } from 'lucide-react';
+import { Bell, MapPin, Store } from 'lucide-react';
 import { useSalon } from '../../context/SalonContext.js';
 import { useAuth } from '../../context/AuthContext.js';
-import { useTheme } from '../../context/ThemeContext.js';
 import { Badge } from '../ui/Badge.js';
 
 export const Header: React.FC = () => {
   const { branches, selectedBranch, selectBranch } = useSalon();
   const { user } = useAuth();
-  const { activeThemeId, setTheme } = useTheme();
 
   return (
     <header
@@ -75,47 +73,8 @@ export const Header: React.FC = () => {
         )}
       </div>
 
-      {/* Right Controls: Theme Selector + Notifications + Role Badge */}
+      {/* Right Controls: Notifications + Role Badge */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        {/* Centralized Theme Switcher */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            background: 'var(--input-background)',
-            border: '1px solid var(--input-border)',
-            padding: '0.35rem 0.75rem',
-            borderRadius: 'var(--radius-md)',
-          }}
-        >
-          <Palette size={15} style={{ color: 'var(--color-action-primary)' }} />
-          <select
-            value={activeThemeId}
-            onChange={(e) => setTheme(e.target.value)}
-            aria-label="Select Theme"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-text-primary)',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              outline: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            <option value="luxury-noir" style={{ background: 'var(--color-background-elevated)', color: 'var(--color-text-primary)' }}>
-              Luxury Noir & Gold
-            </option>
-            <option value="botanical" style={{ background: 'var(--color-background-elevated)', color: 'var(--color-text-primary)' }}>
-              Emerald Botanical
-            </option>
-            <option value="light-minimal" style={{ background: 'var(--color-background-elevated)', color: 'var(--color-text-primary)' }}>
-              Light Minimal / Ivory
-            </option>
-          </select>
-        </div>
-
         <button
           aria-label="Notifications"
           style={{

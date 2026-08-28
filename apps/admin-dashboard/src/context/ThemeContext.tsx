@@ -28,7 +28,7 @@ const ThemeContext = createContext<ThemeContextType>({
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode; defaultThemeId?: string }> = ({
   children,
-  defaultThemeId = 'luxury-noir',
+  defaultThemeId = 'light-minimal',
 }) => {
   const [activeThemeId, setActiveThemeId] = useState<string>(defaultThemeId);
   const [theme, setThemeState] = useState<ThemeDefinition>(getThemeById(defaultThemeId));

@@ -6,9 +6,9 @@ import { adaptThemeForMobile } from '../mobile-adapter.js';
 describe('Theme Contract Completeness & Rebranding Tests', () => {
   const themeIds = Object.keys(availableThemes);
 
-  test('default theme is defined and defaults to luxury-noir', () => {
+  test('default theme is defined and defaults to light-minimal', () => {
     expect(defaultTheme).toBeDefined();
-    expect(defaultTheme.id).toBe('luxury-noir');
+    expect(defaultTheme.id).toBe('light-minimal');
   });
 
   themeIds.forEach((themeId) => {
