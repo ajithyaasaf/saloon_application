@@ -76,45 +76,137 @@ export default function AnalyticsPage() {
       </div>
 
       <Card title="Top Performing Stylists & Commission" subtitle="Revenue generated per team member this month">
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Stylist</th>
-                <th>Role / Title</th>
-                <th>Appointments Done</th>
-                <th>Total Revenue Generated</th>
-                <th>Commission Earned</th>
-                <th>Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ fontWeight: 600 }}>Anita Sharma</td>
-                <td>Senior Colorist</td>
-                <td>72</td>
-                <td style={{ fontWeight: 700 }}>{formatINR(124000)}</td>
-                <td style={{ color: 'var(--success)' }}>{formatINR(18600)}</td>
-                <td>4.9 ★</td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: 600 }}>Rajesh Kumar</td>
-                <td>Master Barber</td>
-                <td>64</td>
-                <td style={{ fontWeight: 700 }}>{formatINR(98000)}</td>
-                <td style={{ color: 'var(--success)' }}>{formatINR(14700)}</td>
-                <td>4.8 ★</td>
-              </tr>
-              <tr>
-                <td style={{ fontWeight: 600 }}>Priya Nair</td>
-                <td>Skin & Facial Specialist</td>
-                <td>58</td>
-                <td style={{ fontWeight: 700 }}>{formatINR(89000)}</td>
-                <td style={{ color: 'var(--success)' }}>{formatINR(13350)}</td>
-                <td>4.9 ★</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="data-table-wrapper" style={{ marginTop: '0.5rem' }}>
+          <div className="data-table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '25%' }}>Stylist Name</th>
+                  <th style={{ width: '20%' }}>Role / Title</th>
+                  <th style={{ width: '15%' }} className="align-center">Appointments</th>
+                  <th style={{ width: '18%' }} className="align-right">Revenue Generated</th>
+                  <th style={{ width: '14%' }} className="align-right">Commission Earned</th>
+                  <th style={{ width: '8%' }} className="align-center">Rating</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'var(--color-action-primary-subtle)',
+                          color: 'var(--color-action-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        AS
+                      </div>
+                      <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Anita Sharma</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Senior Colorist</span>
+                  </td>
+                  <td className="align-center">
+                    <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>72</span>
+                  </td>
+                  <td className="align-right">
+                    <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{formatINR(124000)}</span>
+                  </td>
+                  <td className="align-right">
+                    <span style={{ fontWeight: 600, color: 'var(--color-status-success)' }}>{formatINR(18600)}</span>
+                  </td>
+                  <td className="align-center">
+                    <Badge variant="warning">★ 4.9</Badge>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'var(--color-action-primary-subtle)',
+                          color: 'var(--color-action-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        RK
+                      </div>
+                      <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Rajesh Kumar</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Master Barber</span>
+                  </td>
+                  <td className="align-center">
+                    <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>64</span>
+                  </td>
+                  <td className="align-right">
+                    <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{formatINR(98000)}</span>
+                  </td>
+                  <td className="align-right">
+                    <span style={{ fontWeight: 600, color: 'var(--color-status-success)' }}>{formatINR(14700)}</span>
+                  </td>
+                  <td className="align-center">
+                    <Badge variant="warning">★ 4.8</Badge>
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+                      <div
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: 'var(--radius-full)',
+                          background: 'var(--color-action-primary-subtle)',
+                          color: 'var(--color-action-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 700,
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        PN
+                      </div>
+                      <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Priya Nair</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>Skin & Facial Specialist</span>
+                  </td>
+                  <td className="align-center">
+                    <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>58</span>
+                  </td>
+                  <td className="align-right">
+                    <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>{formatINR(89000)}</span>
+                  </td>
+                  <td className="align-right">
+                    <span style={{ fontWeight: 600, color: 'var(--color-status-success)' }}>{formatINR(13350)}</span>
+                  </td>
+                  <td className="align-center">
+                    <Badge variant="warning">★ 4.9</Badge>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </Card>
     </div>

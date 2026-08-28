@@ -94,54 +94,56 @@ export function DataTable<T extends { id?: string | number }>({
       )}
 
       <div className="data-table-wrapper">
-        <table className="data-table">
-          <thead>
-            <tr>
-              {columns.map((col) => (
-                <th key={col.key} style={{ width: col.width }}>
-                  {col.header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {isLoading ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <tr key={`skeleton-${i}`}>
-                  {columns.map((col) => (
-                    <td key={`sk-${col.key}`}>
-                      <SkeletonLoader height="1.25rem" />
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : rows.length === 0 ? (
+        <div className="data-table-scroll">
+          <table className="data-table">
+            <thead>
               <tr>
-                <td colSpan={columns.length}>
-                  <EmptyState title={emptyTitle} message={emptyMessage} />
-                </td>
+                {columns.map((col) => (
+                  <th key={col.key} style={{ width: col.width }}>
+                    {col.header}
+                  </th>
+                ))}
               </tr>
-            ) : (
-              rows.map((item, idx) => (
-                <tr
-                  key={item.id ? String(item.id) : `row-${idx}`}
-                  onClick={() => onRowClick?.(item)}
-                  style={{ cursor: onRowClick ? 'pointer' : 'default' }}
-                >
-                  {columns.map((col) => (
-                    <td key={col.key}>
-                      {col.render
-                        ? col.render(item)
-                        : (item as any)[col.key] !== undefined
-                        ? String((item as any)[col.key])
-                        : '—'}
-                    </td>
-                  ))}
+            </thead>
+            <tbody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={`skeleton-${i}`}>
+                    {columns.map((col) => (
+                      <td key={`sk-${col.key}`}>
+                        <SkeletonLoader height="1.25rem" />
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length} style={{ padding: 0 }}>
+                    <EmptyState title={emptyTitle} message={emptyMessage} />
+                  </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                rows.map((item, idx) => (
+                  <tr
+                    key={item.id ? String(item.id) : `row-${idx}`}
+                    onClick={() => onRowClick?.(item)}
+                    style={{ cursor: onRowClick ? 'pointer' : 'default' }}
+                  >
+                    {columns.map((col) => (
+                      <td key={col.key}>
+                        {col.render
+                          ? col.render(item)
+                          : (item as any)[col.key] !== undefined
+                          ? String((item as any)[col.key])
+                          : '—'}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {meta && (meta.totalPages > 1 || meta.total > 0) && (

@@ -166,56 +166,72 @@ export default function ServicesPage() {
 
       {/* Services Table */}
       <Card title="Available Treatments & Menu" subtitle="Live services offered to clients during slot bookings">
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Treatment Name</th>
-                <th>Category</th>
-                <th>Target</th>
-                <th>Base Price</th>
-                <th>Duration</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.length === 0 ? (
+        <div className="data-table-wrapper" style={{ marginTop: '0.5rem' }}>
+          <div className="data-table-scroll">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                    No services created yet. Click "Add New Treatment" above.
-                  </td>
+                  <th style={{ width: '28%' }}>Treatment Name</th>
+                  <th style={{ width: '18%' }}>Category</th>
+                  <th style={{ width: '12%' }}>Target</th>
+                  <th style={{ width: '14%' }} className="align-right">Base Price</th>
+                  <th style={{ width: '12%' }} className="align-center">Duration</th>
+                  <th style={{ width: '10%' }} className="align-center">Status</th>
+                  <th style={{ width: '6%' }} className="align-right">Action</th>
                 </tr>
-              ) : (
-                services.map((srv) => (
-                  <tr key={srv.id}>
-                    <td style={{ fontWeight: 600 }}>{srv.name}</td>
-                    <td>{srv.categoryName || 'Hair & Styling'}</td>
-                    <td>
-                      <Badge variant="primary">{srv.targetGender || 'ALL'}</Badge>
-                    </td>
-                    <td style={{ fontWeight: 700 }}>{formatINR(srv.basePrice || 0)}</td>
-                    <td>{formatDuration(srv.durationMinutes || 30)}</td>
-                    <td>
-                      <Badge variant={srv.isActive !== false ? 'success' : 'warning'}>
-                        {srv.isActive !== false ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={<Edit2 size={12} />}
-                        onClick={() => handleOpenEdit(srv)}
-                      >
-                        Edit
-                      </Button>
+              </thead>
+              <tbody>
+                {services.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--color-text-muted)' }}>
+                      No treatments created yet. Click "Add New Treatment" above to get started.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  services.map((srv) => (
+                    <tr key={srv.id}>
+                      <td>
+                        <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{srv.name}</span>
+                      </td>
+                      <td>
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                          {srv.categoryName || 'Hair & Styling'}
+                        </span>
+                      </td>
+                      <td>
+                        <Badge variant="neutral">{srv.targetGender || 'ALL'}</Badge>
+                      </td>
+                      <td className="align-right">
+                        <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                          {formatINR(srv.basePrice || 0)}
+                        </span>
+                      </td>
+                      <td className="align-center">
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                          {formatDuration(srv.durationMinutes || 30)}
+                        </span>
+                      </td>
+                      <td className="align-center">
+                        <Badge variant={srv.isActive !== false ? 'success' : 'warning'}>
+                          {srv.isActive !== false ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </td>
+                      <td className="align-right">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          leftIcon={<Edit2 size={12} />}
+                          onClick={() => handleOpenEdit(srv)}
+                        >
+                          Edit
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Card>
 

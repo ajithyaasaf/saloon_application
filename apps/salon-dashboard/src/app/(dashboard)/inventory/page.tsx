@@ -147,55 +147,84 @@ export default function InventoryPage() {
       </div>
 
       <Card title="Product Inventory Directory" subtitle="Current on-hand stock and retail pricing">
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Product Name</th>
-                <th>SKU Code</th>
-                <th>Retail Price</th>
-                <th>Cost Price</th>
-                <th>Type</th>
-                <th>Stock Alert</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.length === 0 ? (
+        <div className="data-table-wrapper" style={{ marginTop: '0.5rem' }}>
+          <div className="data-table-scroll">
+            <table className="data-table">
+              <thead>
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                    No products added yet. Click "Add Product SKU" above.
-                  </td>
+                  <th style={{ width: '26%' }}>Product Name</th>
+                  <th style={{ width: '16%' }}>SKU Code</th>
+                  <th style={{ width: '13%' }} className="align-right">Retail Price</th>
+                  <th style={{ width: '13%' }} className="align-right">Cost Price</th>
+                  <th style={{ width: '10%' }} className="align-center">Usage</th>
+                  <th style={{ width: '10%' }} className="align-center">Alert Level</th>
+                  <th style={{ width: '8%' }} className="align-center">Status</th>
+                  <th style={{ width: '4%' }} className="align-right">Action</th>
                 </tr>
-              ) : (
-                products.map((prod) => (
-                  <tr key={prod.id}>
-                    <td style={{ fontWeight: 600 }}>{prod.name}</td>
-                    <td style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{prod.sku}</td>
-                    <td style={{ fontWeight: 700 }}>{formatINR(prod.retailPrice || 0)}</td>
-                    <td>{formatINR(prod.costPrice || 0)}</td>
-                    <td>
-                      <Badge variant={prod.isForRetail ? 'primary' : 'info'}>
-                        {prod.isForRetail ? 'Retail' : 'Backbar'}
-                      </Badge>
-                    </td>
-                    <td>Min: {prod.minStockAlertLevel || 5}</td>
-                    <td>
-                      <Badge variant={prod.isActive ? 'success' : 'warning'}>
-                        {prod.isActive ? 'In Stock' : 'Out'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button variant="secondary" size="sm" leftIcon={<Edit2 size={12} />} onClick={() => handleOpenEdit(prod)}>
-                        Edit
-                      </Button>
+              </thead>
+              <tbody>
+                {products.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--color-text-muted)' }}>
+                      No inventory products added yet. Click "Add Product SKU" above to register stock.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  products.map((prod) => (
+                    <tr key={prod.id}>
+                      <td>
+                        <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{prod.name}</span>
+                      </td>
+                      <td>
+                        <span
+                          style={{
+                            fontFamily: 'monospace',
+                            fontSize: '0.8125rem',
+                            padding: '0.2rem 0.5rem',
+                            background: 'var(--color-action-secondary)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--color-text-secondary)',
+                          }}
+                        >
+                          {prod.sku}
+                        </span>
+                      </td>
+                      <td className="align-right">
+                        <span style={{ fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                          {formatINR(prod.retailPrice || 0)}
+                        </span>
+                      </td>
+                      <td className="align-right">
+                        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem' }}>
+                          {formatINR(prod.costPrice || 0)}
+                        </span>
+                      </td>
+                      <td className="align-center">
+                        <Badge variant={prod.isForRetail ? 'primary' : 'info'}>
+                          {prod.isForRetail ? 'Retail Client' : 'Backbar Supply'}
+                        </Badge>
+                      </td>
+                      <td className="align-center">
+                        <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>
+                          Min: <strong>{prod.minStockAlertLevel || 5}</strong>
+                        </span>
+                      </td>
+                      <td className="align-center">
+                        <Badge variant={prod.isActive ? 'success' : 'warning'}>
+                          {prod.isActive ? 'In Stock' : 'Low Stock'}
+                        </Badge>
+                      </td>
+                      <td className="align-right">
+                        <Button variant="secondary" size="sm" leftIcon={<Edit2 size={12} />} onClick={() => handleOpenEdit(prod)}>
+                          Edit
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Card>
 

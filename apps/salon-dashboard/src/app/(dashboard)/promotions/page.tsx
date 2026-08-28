@@ -152,60 +152,88 @@ export default function PromotionsPage() {
       {/* Coupons View */}
       {activeTab === 'COUPONS' && (
         <Card title="Active Promotional Codes" subtitle="Discount codes applicable at checkout">
-          <div className="data-table-wrapper">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Coupon Code</th>
-                  <th>Campaign Name</th>
-                  <th>Discount</th>
-                  <th>Min Spend</th>
-                  <th>Usage Limit</th>
-                  <th>Redemptions</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {coupons.length === 0 ? (
+          <div className="data-table-wrapper" style={{ marginTop: '0.5rem' }}>
+            <div className="data-table-scroll">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan={8} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                      No promo codes created yet. Click "Create Campaign Code" above.
-                    </td>
+                    <th style={{ width: '18%' }}>Coupon Code</th>
+                    <th style={{ width: '22%' }}>Campaign Name</th>
+                    <th style={{ width: '14%' }}>Discount</th>
+                    <th style={{ width: '12%' }} className="align-right">Min Spend</th>
+                    <th style={{ width: '12%' }} className="align-center">Usage Limit</th>
+                    <th style={{ width: '8%' }} className="align-center">Used</th>
+                    <th style={{ width: '8%' }} className="align-center">Status</th>
+                    <th style={{ width: '6%' }} className="align-right">Action</th>
                   </tr>
-                ) : (
-                  coupons.map((c) => (
-                    <tr key={c.id}>
-                      <td style={{ fontWeight: 700, fontFamily: 'monospace', color: 'var(--text-accent)' }}>
-                        {c.code}
-                      </td>
-                      <td>{c.name}</td>
-                      <td style={{ fontWeight: 600 }}>
-                        {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% OFF` : formatINR(c.discountValue)}
-                      </td>
-                      <td>{c.minBookingAmount ? formatINR(c.minBookingAmount) : 'None'}</td>
-                      <td>{c.perCustomerLimit} / client</td>
-                      <td>{c.timesUsed || 0}</td>
-                      <td>
-                        <Badge variant={c.isActive ? 'success' : 'warning'}>
-                          {c.isActive ? 'Active' : 'Expired'}
-                        </Badge>
-                      </td>
-                      <td>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          leftIcon={<Trash2 size={12} />}
-                          onClick={() => handleDeleteCoupon(c.id)}
-                        >
-                          Delete
-                        </Button>
+                </thead>
+                <tbody>
+                  {coupons.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--color-text-muted)' }}>
+                        No promo codes created yet. Click "Create Campaign Code" above.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    coupons.map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <span
+                            style={{
+                              fontWeight: 700,
+                              fontFamily: 'monospace',
+                              padding: '0.25rem 0.5rem',
+                              background: 'var(--color-action-primary-subtle)',
+                              color: 'var(--color-action-primary)',
+                              borderRadius: 'var(--radius-sm)',
+                              border: '1px solid var(--color-border-subtle)',
+                            }}
+                          >
+                            {c.code}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 500, color: 'var(--color-text-primary)' }}>{c.name}</span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: 'var(--color-status-success)' }}>
+                            {c.discountType === 'PERCENTAGE' ? `${c.discountValue}% OFF` : formatINR(c.discountValue)}
+                          </span>
+                        </td>
+                        <td className="align-right">
+                          <span style={{ color: 'var(--color-text-secondary)' }}>
+                            {c.minBookingAmount ? formatINR(c.minBookingAmount) : 'None'}
+                          </span>
+                        </td>
+                        <td className="align-center">
+                          <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>
+                            {c.perCustomerLimit} / client
+                          </span>
+                        </td>
+                        <td className="align-center">
+                          <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{c.timesUsed || 0}</span>
+                        </td>
+                        <td className="align-center">
+                          <Badge variant={c.isActive ? 'success' : 'warning'}>
+                            {c.isActive ? 'Active' : 'Expired'}
+                          </Badge>
+                        </td>
+                        <td className="align-right">
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            leftIcon={<Trash2 size={12} />}
+                            onClick={() => handleDeleteCoupon(c.id)}
+                          >
+                            Delete
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </Card>
       )}
@@ -213,37 +241,50 @@ export default function PromotionsPage() {
       {/* Flash Sales View */}
       {activeTab === 'FLASH_SALES' && (
         <Card title="Live Flash Deals" subtitle="Limited-time slot discounts to drive off-peak demand">
-          <div className="data-table-wrapper">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Flash Sale Title</th>
-                  <th>Discount Rate</th>
-                  <th>Window Duration</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {flashSales.length === 0 ? (
+          <div className="data-table-wrapper" style={{ marginTop: '0.5rem' }}>
+            <div className="data-table-scroll">
+              <table className="data-table">
+                <thead>
                   <tr>
-                    <td colSpan={4} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                      No active flash deals right now. Click "Launch Flash Sale" above.
-                    </td>
+                    <th style={{ width: '35%' }}>Flash Sale Title</th>
+                    <th style={{ width: '20%' }}>Discount Rate</th>
+                    <th style={{ width: '30%' }}>Window Duration</th>
+                    <th style={{ width: '15%' }} className="align-center">Status</th>
                   </tr>
-                ) : (
-                  flashSales.map((fs) => (
-                    <tr key={fs.id}>
-                      <td style={{ fontWeight: 600 }}>{fs.title}</td>
-                      <td style={{ fontWeight: 700, color: 'var(--success)' }}>{fs.discountPercentage}% OFF</td>
-                      <td>{new Date(fs.startTime).toLocaleTimeString()} – {new Date(fs.endTime).toLocaleTimeString()}</td>
-                      <td>
-                        <Badge variant={fs.status === 'ACTIVE' ? 'success' : 'warning'}>{fs.status}</Badge>
+                </thead>
+                <tbody>
+                  {flashSales.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} style={{ textAlign: 'center', padding: '3.5rem 1.5rem', color: 'var(--color-text-muted)' }}>
+                        No active flash deals right now. Click "Launch Flash Sale" above.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    flashSales.map((fs) => (
+                      <tr key={fs.id}>
+                        <td>
+                          <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{fs.title}</span>
+                        </td>
+                        <td>
+                          <span style={{ fontWeight: 700, color: 'var(--color-status-success)' }}>
+                            {fs.discountPercentage}% OFF
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
+                            {new Date(fs.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} –{' '}
+                            {new Date(fs.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </td>
+                        <td className="align-center">
+                          <Badge variant={fs.status === 'ACTIVE' ? 'success' : 'warning'}>{fs.status}</Badge>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </Card>
       )}

@@ -165,34 +165,69 @@ export default function BranchesPage() {
       <Card
         title={`Weekly Business Hours: ${selectedBranch?.name || 'Selected Branch'}`}
         subtitle="Standard opening and closing hours for customer slot availability"
+        actions={
+          <Button variant="secondary" size="sm" leftIcon={<Clock size={14} />} onClick={() => setIsHoursModalOpen(true)}>
+            Edit Schedule
+          </Button>
+        }
       >
-        <div className="data-table-wrapper">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Day of Week</th>
-                <th>Status</th>
-                <th>Opening Time</th>
-                <th>Closing Time</th>
-                <th>Lunch Break</th>
-              </tr>
-            </thead>
-            <tbody>
-              {DAYS_OF_WEEK.map((day) => (
-                <tr key={day}>
-                  <td style={{ fontWeight: 600 }}>{day}</td>
-                  <td>
-                    <Badge variant={day === DayOfWeek.SUNDAY ? 'warning' : 'success'}>
-                      {day === DayOfWeek.SUNDAY ? 'Limited' : 'Open'}
-                    </Badge>
-                  </td>
-                  <td>{openTime}</td>
-                  <td>{closeTime}</td>
-                  <td>{lunchStart} – {lunchEnd}</td>
+        <div className="data-table-wrapper" style={{ marginTop: '0.5rem' }}>
+          <div className="data-table-scroll">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '25%' }}>Day of Week</th>
+                  <th style={{ width: '15%' }}>Branch Status</th>
+                  <th style={{ width: '20%' }}>Opening Time</th>
+                  <th style={{ width: '20%' }}>Closing Time</th>
+                  <th style={{ width: '20%' }}>Daily Lunch Break</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {DAYS_OF_WEEK.map((day) => (
+                  <tr key={day}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{day}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <Badge variant={day === DayOfWeek.SUNDAY ? 'warning' : 'success'}>
+                        {day === DayOfWeek.SUNDAY ? 'Limited Hours' : 'Open Standard'}
+                      </Badge>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                        {openTime}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                        {closeTime}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.375rem',
+                          padding: '0.25rem 0.625rem',
+                          background: 'var(--color-action-secondary)',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: '0.75rem',
+                          fontWeight: 500,
+                          color: 'var(--color-text-secondary)',
+                        }}
+                      >
+                        <Clock size={12} /> {lunchStart} – {lunchEnd}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Card>
 
