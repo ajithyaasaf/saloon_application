@@ -2,64 +2,64 @@
 
 :root {
   /* ==========================================================================
-     Theme Metadata (Default: Luxury Noir & Gold)
+     Theme Metadata (Default: Light Minimal / White & Black)
      ========================================================================== */
-  --theme-id: "luxury-noir";
-  --theme-name: "Luxury Noir & Gold";
-  --theme-appearance: "dark";
+  --theme-id: "light-minimal";
+  --theme-name: "Light Minimal / Ivory";
+  --theme-appearance: "light";
 
   /* ==========================================================================
      Layer 2: Semantic Color Tokens
      ========================================================================== */
-  --color-background-canvas: #080A0C;
-  --color-background-surface: #121518;
-  --color-background-elevated: #191C1F;
-  --color-background-inset: #0D0F11;
-  --color-background-inverse: #F8F9FA;
-  --color-background-overlay: rgba(0, 0, 0, 0.78);
+  --color-background-canvas: #F8FAFC;
+  --color-background-surface: #FFFFFF;
+  --color-background-elevated: #FFFFFF;
+  --color-background-inset: #F1F5F9;
+  --color-background-inverse: #0F172A;
+  --color-background-overlay: rgba(15, 23, 42, 0.45);
 
-  --color-text-primary: #F8F9FA;
-  --color-text-secondary: #CED4DA;
-  --color-text-muted: #9BA1A6;
-  --color-text-inverse: #080A0C;
-  --color-text-disabled: #495057;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #64748B;
+  --color-text-inverse: #FFFFFF;
+  --color-text-disabled: #94A3B8;
 
-  --color-border-subtle: rgba(255, 255, 255, 0.05);
-  --color-border-default: rgba(255, 255, 255, 0.08);
-  --color-border-strong: rgba(255, 255, 255, 0.16);
-  --color-border-focus: #D4AF37;
-  --color-border-error: #F87171;
+  --color-border-subtle: rgba(0, 0, 0, 0.05);
+  --color-border-default: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+  --color-border-focus: #111827;
+  --color-border-error: #EF4444;
 
-  --color-action-primary: #D4AF37;
-  --color-action-primary-hover: #C59F2A;
-  --color-action-primary-active: #A6821E;
-  --color-action-primary-subtle: rgba(212, 175, 55, 0.12);
-  --color-action-secondary: rgba(255, 255, 255, 0.06);
-  --color-action-secondary-hover: rgba(255, 255, 255, 0.10);
-  --color-action-ghost-hover: rgba(255, 255, 255, 0.05);
+  --color-action-primary: #111827;
+  --color-action-primary-hover: #1F2937;
+  --color-action-primary-active: #374151;
+  --color-action-primary-subtle: rgba(17, 24, 39, 0.06);
+  --color-action-secondary: #F1F5F9;
+  --color-action-secondary-hover: #E2E8F0;
+  --color-action-ghost-hover: rgba(0, 0, 0, 0.04);
   --color-action-destructive: #EF4444;
   --color-action-destructive-hover: #DC2626;
 
-  --color-status-success: #34D399;
-  --color-status-success-subtle: rgba(52, 211, 153, 0.12);
-  --color-status-success-border: rgba(52, 211, 153, 0.28);
-  --color-status-warning: #FBBF24;
-  --color-status-warning-subtle: rgba(251, 191, 36, 0.12);
-  --color-status-warning-border: rgba(251, 191, 36, 0.28);
-  --color-status-error: #F87171;
-  --color-status-error-subtle: rgba(248, 113, 113, 0.12);
-  --color-status-error-border: rgba(248, 113, 113, 0.28);
-  --color-status-info: #60A5FA;
-  --color-status-info-subtle: rgba(96, 165, 250, 0.12);
-  --color-status-info-border: rgba(96, 165, 250, 0.28);
+  --color-status-success: #16A34A;
+  --color-status-success-subtle: rgba(22, 163, 74, 0.12);
+  --color-status-success-border: rgba(22, 163, 74, 0.28);
+  --color-status-warning: #D97706;
+  --color-status-warning-subtle: rgba(217, 119, 6, 0.12);
+  --color-status-warning-border: rgba(217, 119, 6, 0.28);
+  --color-status-error: #EF4444;
+  --color-status-error-subtle: rgba(239, 68, 68, 0.12);
+  --color-status-error-border: rgba(239, 68, 68, 0.28);
+  --color-status-info: #2563EB;
+  --color-status-info-subtle: rgba(37, 99, 235, 0.12);
+  --color-status-info-border: rgba(37, 99, 235, 0.28);
 
   /* Legacy variable compatibility bridge */
   --bg-main: var(--color-background-canvas);
   --bg-surface: var(--color-background-surface);
   --bg-card: var(--color-background-surface);
-  --bg-card-hover: var(--color-background-elevated);
+  --bg-card-hover: var(--color-background-inset);
   --bg-sidebar: var(--color-background-surface);
-  --bg-modal: var(--color-background-elevated);
+  --bg-modal: var(--color-background-surface);
   --text-primary: var(--color-text-primary);
   --text-secondary: var(--color-text-secondary);
   --text-muted: var(--color-text-muted);
@@ -85,12 +85,12 @@
   --button-primary-background: var(--color-action-primary);
   --button-primary-background-hover: var(--color-action-primary-hover);
   --button-primary-background-active: var(--color-action-primary-active);
-  --button-primary-text: var(--color-text-inverse);
+  --button-primary-text: #FFFFFF;
   --button-primary-border: transparent;
-  --button-primary-shadow: 0 4px 14px rgba(212, 175, 55, 0.25);
+  --button-primary-shadow: 0 2px 6px rgba(17, 24, 39, 0.18);
 
-  --button-secondary-background: var(--color-action-secondary);
-  --button-secondary-background-hover: var(--color-action-secondary-hover);
+  --button-secondary-background: #FFFFFF;
+  --button-secondary-background-hover: #F1F5F9;
   --button-secondary-text: var(--color-text-primary);
   --button-secondary-border: var(--color-border-default);
 
@@ -98,23 +98,23 @@
   --button-ghost-text: var(--color-text-secondary);
 
   --button-destructive-background: var(--color-status-error-subtle);
-  --button-destructive-background-hover: rgba(248, 113, 113, 0.20);
+  --button-destructive-background-hover: rgba(239, 68, 68, 0.20);
   --button-destructive-text: var(--color-status-error);
   --button-destructive-border: var(--color-status-error-border);
 
-  --input-background: var(--color-background-inset);
+  --input-background: #FFFFFF;
   --input-text: var(--color-text-primary);
   --input-placeholder: var(--color-text-muted);
   --input-border: var(--color-border-default);
   --input-border-hover: var(--color-border-strong);
   --input-border-focus: var(--color-border-focus);
   --input-border-error: var(--color-border-error);
-  --input-focus-ring: 0 0 0 2px rgba(212, 175, 55, 0.25);
+  --input-focus-ring: 0 0 0 2px rgba(17, 24, 39, 0.15);
 
-  --card-background: var(--color-background-surface);
+  --card-background: #FFFFFF;
   --card-border: var(--color-border-default);
   --card-border-hover: var(--color-border-strong);
-  --card-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.45);
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06);
   --card-radius: 12px;
 
   --badge-success-background: var(--color-status-success-subtle);
@@ -132,40 +132,40 @@
   --badge-neutral-background: var(--color-action-secondary);
   --badge-neutral-text: var(--color-text-secondary);
   --badge-neutral-border: var(--color-border-default);
-  --badge-primary-background: var(--color-action-primary-subtle);
+  --badge-primary-background: rgba(15, 23, 42, 0.08);
   --badge-primary-text: var(--color-action-primary);
-  --badge-primary-border: var(--color-border-focus);
+  --badge-primary-border: rgba(15, 23, 42, 0.20);
 
-  --table-header-background: var(--color-background-inset);
+  --table-header-background: #F1F5F9;
   --table-header-text: var(--color-text-secondary);
-  --table-header-border: var(--color-border-subtle);
-  --table-row-background: var(--color-background-surface);
-  --table-row-background-hover: rgba(255, 255, 255, 0.03);
-  --table-row-background-selected: var(--color-action-primary-subtle);
-  --table-row-border: var(--color-border-subtle);
+  --table-header-border: var(--color-border-default);
+  --table-row-background: #FFFFFF;
+  --table-row-background-hover: rgba(0, 0, 0, 0.02);
+  --table-row-background-selected: rgba(17, 24, 39, 0.05);
+  --table-row-border: rgba(0, 0, 0, 0.05);
 
-  --modal-background: var(--color-background-elevated);
+  --modal-background: #FFFFFF;
   --modal-overlay: var(--color-background-overlay);
-  --modal-border: var(--color-border-strong);
-  --modal-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.75);
+  --modal-border: var(--color-border-default);
+  --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
-  --sidebar-background: var(--color-background-surface);
-  --sidebar-border: var(--color-border-subtle);
-  --sidebar-item-background-hover: var(--color-action-ghost-hover);
-  --sidebar-item-background-active: var(--color-action-primary-subtle);
+  --sidebar-background: #FFFFFF;
+  --sidebar-border: var(--color-border-default);
+  --sidebar-item-background-hover: rgba(0, 0, 0, 0.03);
+  --sidebar-item-background-active: rgba(17, 24, 39, 0.06);
   --sidebar-item-text: var(--color-text-secondary);
   --sidebar-item-text-active: var(--color-action-primary);
   --sidebar-item-border-active: var(--color-action-primary);
 
-  --header-background: rgba(18, 21, 24, 0.88);
-  --header-border: var(--color-border-subtle);
+  --header-background: rgba(255, 255, 255, 0.92);
+  --header-border: var(--color-border-default);
   --header-text: var(--color-text-primary);
 
-  --navigation-background: var(--color-background-surface);
+  --navigation-background: #FFFFFF;
   --navigation-item-active: var(--color-action-primary);
-  --navigation-item-hover: var(--color-action-ghost-hover);
+  --navigation-item-hover: rgba(0, 0, 0, 0.04);
   --navigation-item-inactive: var(--color-text-muted);
-  --navigation-border: var(--color-border-subtle);
+  --navigation-border: var(--color-border-default);
 
   /* Scales: Spacing, Radius, Motion & Layout */
   --space-0: 0px;

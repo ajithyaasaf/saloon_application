@@ -27,15 +27,15 @@ describe('Salon Dashboard Theme Engine & Switching Tests', () => {
     document.documentElement.removeAttribute('data-theme');
   });
 
-  it('initializes with default luxury-noir theme', () => {
+  it('initializes with default light-minimal theme', () => {
     render(
       <ThemeProvider>
         <TestThemeComponent />
       </ThemeProvider>
     );
 
-    expect(screen.getByTestId('current-theme-id')).toHaveTextContent('luxury-noir');
-    expect(screen.getByTestId('current-theme-appearance')).toHaveTextContent('dark');
+    expect(screen.getByTestId('current-theme-id')).toHaveTextContent('light-minimal');
+    expect(screen.getByTestId('current-theme-appearance')).toHaveTextContent('light');
   });
 
   it('switches to emerald botanical theme dynamically', () => {

@@ -183,19 +183,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode; defaultThemeId
 
   useEffect(() => {
     try {
-      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-      if (savedTheme && availableThemes[savedTheme]) {
-        setActiveThemeId(savedTheme);
-        setThemeState(availableThemes[savedTheme]);
-        applyThemeToDOM(availableThemes[savedTheme]);
-      } else {
-        applyThemeToDOM(defaultTheme);
-      }
-    } catch {
-      applyThemeToDOM(defaultTheme);
-    } finally {
-      setIsLoaded(true);
-    }
+      localStorage.removeItem(THEME_STORAGE_KEY);
+    } catch {}
+    setActiveThemeId(defaultTheme.id);
+    setThemeState(defaultTheme);
+    applyThemeToDOM(defaultTheme);
+    setIsLoaded(true);
   }, []);
 
   const setTheme = (themeId: string) => {
