@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: saloon_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: saloon_user
+      POSTGRES_PASSWORD: saloon_pass
+      POSTGRES_DB: saloon_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U saloon_user -d saloon_db']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: saloon_redis
+    restart: always
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: saloon_api
+    restart: on-failure
+    ports:
+      - '3000:3000'
+    environment:
+      NODE_ENV: development
+      APP_PORT: 3000
+      APP_PREFIX: api
+      DATABASE_URL: postgresql://saloon_user:saloon_pass@postgres:5432/saloon_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_REDIS_HOST: redis
+      QUEUE_REDIS_PORT: 6379
+      JWT_ACCESS_SECRET: dev-super-secret-access-token-min-32-chars-long
+      JWT_REFRESH_SECRET: dev-super-secret-refresh-token-min-32-chars-long
+      CLOUDINARY_CLOUD_NAME: dev_cloud
+      CLOUDINARY_API_KEY: dev_key
+      CLOUDINARY_API_SECRET: dev_secret
+      RAZORPAY_KEY_ID: rzp_test_12345
+      RAZORPAY_KEY_SECRET: dev_secret_12345
+      FIREBASE_PROJECT_ID: dev-project
+      FIREBASE_CLIENT_EMAIL: dev@project.iam.gserviceaccount.com
+      FIREBASE_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nDEV_KEY\n-----END PRIVATE KEY-----\n"
+      TWILIO_ACCOUNT_SID: AC123456789
+      TWILIO_AUTH_TOKEN: dev_token
+      TWILIO_FROM_NUMBER: "+919999999999"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  redis_data:

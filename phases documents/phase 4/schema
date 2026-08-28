@@ -1,0 +1,811 @@
+// Physical Database Design - Prisma Schema
+// Salon Booking & Management Platform
+// Version: 4.3 (Polish & Singleton Guaranteed Baseline)
+// Single Source of Truth: PRD v1.2, Architecture v2.1, Logical DB v3.1
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// SYSTEM ENUMS
+// ==========================================
+
+enum UserRole {
+  CUSTOMER
+  SALON_OWNER
+  SALON_STAFF
+  SUPER_ADMIN
+  SUPPORT_AGENT
+
+  @@map("enum_user_role")
+}
+
+enum SalonStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  SUSPENDED
+  ARCHIVED
+
+  @@map("enum_salon_status")
+}
+
+enum SalonPlanType {
+  FREE_COMMISSION
+  PREMIUM_SUBSCRIPTION
+
+  @@map("enum_salon_plan_type")
+}
+
+enum BranchGenderCategory {
+  MEN
+  WOMEN
+  UNISEX
+
+  @@map("enum_branch_gender_category")
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+
+  @@map("enum_appointment_status")
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+
+  @@map("enum_payment_status")
+}
+
+enum PaymentMethod {
+  RAZORPAY_ONLINE
+  PAY_AT_SALON
+
+  @@map("enum_payment_method")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  VOIDED
+
+  @@map("enum_invoice_status")
+}
+
+enum NotificationChannel {
+  PUSH
+  SMS
+  WHATSAPP
+  EMAIL
+
+  @@map("enum_notification_channel")
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  READ
+
+  @@map("enum_notification_status")
+}
+
+enum ShiftDayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+
+  @@map("enum_shift_day_of_week")
+}
+
+enum LeaveType {
+  SICK_LEAVE
+  CASUAL_LEAVE
+  VACATION
+  EMERGENCY_CLOSURE
+
+  @@map("enum_leave_type")
+}
+
+enum ManualBlockReason {
+  MEETING
+  TRAINING
+  VIP_BOOKING
+  EMERGENCY
+  PERSONAL
+
+  @@map("enum_manual_block_reason")
+}
+
+enum StaffExperienceLevel {
+  JUNIOR
+  MID
+  SENIOR
+  MASTER
+
+  @@map("enum_staff_experience_level")
+}
+
+enum CouponDiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+
+  @@map("enum_coupon_discount_type")
+}
+
+enum MediaType {
+  IMAGE
+  DOCUMENT
+
+  @@map("enum_media_type")
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  PASSWORD_RESET
+
+  @@map("enum_audit_action")
+}
+
+// ==========================================
+// DOMAIN MODELS
+// ==========================================
+
+model User {
+  id               String    @id @default(uuid()) @db.Uuid
+  phone            String    @unique(map: "uq_users_phone")
+  phoneVerified    Boolean   @default(false) @map("phone_verified")
+  email            String?   @unique(map: "uq_users_email")
+  emailVerified    Boolean   @default(false) @map("email_verified")
+  passwordHash     String?   @map("password_hash")
+  firstName        String    @map("first_name")
+  lastName         String?   @map("last_name")
+  role             UserRole  @default(CUSTOMER)
+  isActive         Boolean   @default(true) @map("is_active")
+  avatarMediaId    String?   @map("avatar_media_id") @db.Uuid
+  
+  // Standard Audit Fields
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime? @map("deleted_at") @db.Timestamptz
+  createdById      String?   @map("created_by_id") @db.Uuid
+  updatedById      String?   @map("updated_by_id") @db.Uuid
+  version          Int       @default(1)
+
+  // Relations
+  salons           Salon[]   @relation("SalonOwner")
+  staffProfile     Staff?
+  sessions         UserSession[]
+  appointments     Appointment[] @relation("CustomerAppointments")
+  notifications    Notification[]
+  uploadedMedia    Media[]   @relation("MediaUploader")
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  refreshTokenHash String   @map("refresh_token_hash")
+  deviceId         String   @map("device_id")
+  userAgent        String?  @map("user_agent")
+  ipAddress        String?  @map("ip_address")
+  expiresAt        DateTime @map("expires_at") @db.Timestamptz
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_user_sessions_user")
+
+  @@index([userId, refreshTokenHash], map: "idx_user_sessions_lookup")
+  @@map("user_sessions")
+}
+
+model Salon {
+  id               String        @id @default(uuid()) @db.Uuid
+  ownerId          String        @map("owner_id") @db.Uuid
+  brandName        String        @map("brand_name")
+  gstin            String?
+  planType         SalonPlanType @default(FREE_COMMISSION) @map("plan_type")
+  status           SalonStatus   @default(PENDING_APPROVAL)
+  logoMediaId      String?       @map("logo_media_id") @db.Uuid
+  
+  createdAt        DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime?     @map("deleted_at") @db.Timestamptz
+  createdById      String?       @map("created_by_id") @db.Uuid
+  updatedById      String?       @map("updated_by_id") @db.Uuid
+  version          Int           @default(1)
+
+  owner            User          @relation("SalonOwner", fields: [ownerId], references: [id], onDelete: Restrict, map: "fk_salons_owner")
+  logoMedia        Media?        @relation("SalonLogoMedia", fields: [logoMediaId], references: [id], onDelete: SetNull, map: "fk_salons_logo_media")
+  branches         Branch[]
+
+  @@map("salons")
+}
+
+model Branch {
+  id               String               @id @default(uuid()) @db.Uuid
+  salonId          String               @map("salon_id") @db.Uuid
+  managerStaffId   String?              @map("manager_staff_id") @db.Uuid
+  branchName       String               @map("branch_name")
+  addressLine1     String               @map("address_line1")
+  addressLine2     String?              @map("address_line2")
+  city             String
+  state            String
+  pincode          String
+  latitude         Float
+  longitude        Float
+  phone            String
+  genderCategory   BranchGenderCategory @default(UNISEX) @map("gender_category")
+  coverMediaId     String?              @map("cover_media_id") @db.Uuid
+  status           SalonStatus          @default(APPROVED)
+
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime             @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime?            @map("deleted_at") @db.Timestamptz
+  createdById      String?              @map("created_by_id") @db.Uuid
+  updatedById      String?              @map("updated_by_id") @db.Uuid
+  version          Int                  @default(1)
+
+  salon            Salon                @relation(fields: [salonId], references: [id], onDelete: Restrict, map: "fk_branches_salon")
+  managerStaff     Staff?               @relation("BranchManagerStaff", fields: [managerStaffId], references: [id], onDelete: SetNull, map: "fk_branches_manager_staff")
+  coverMedia       Media?               @relation("BranchCoverMedia", fields: [coverMediaId], references: [id], onDelete: SetNull, map: "fk_branches_cover_media")
+  businessHours    BranchBusinessHours[]
+  specialHolidays  BranchSpecialHoliday[]
+  tempClosures     BranchTempClosure[]
+  staffAssignments StaffAssignment[]
+  services         BranchService[]
+  appointments     Appointment[]
+
+  @@index([salonId], map: "idx_branches_salon")
+  @@map("branches")
+}
+
+model BranchBusinessHours {
+  branchId         String         @map("branch_id") @db.Uuid
+  dayOfWeek        ShiftDayOfWeek @map("day_of_week")
+  openTime         DateTime       @map("open_time") @db.Time
+  closeTime        DateTime       @map("close_time") @db.Time
+  isClosed         Boolean        @default(false) @map("is_closed")
+
+  branch           Branch         @relation(fields: [branchId], references: [id], onDelete: Cascade, map: "fk_branch_business_hours_branch")
+
+  @@id([branchId, dayOfWeek], map: "pk_branch_business_hours")
+  @@map("branch_business_hours")
+}
+
+model BranchSpecialHoliday {
+  id               String    @id @default(uuid()) @db.Uuid
+  branchId         String    @map("branch_id") @db.Uuid
+  holidayDate      DateTime  @map("holiday_date") @db.Date
+  reason           String
+  isFullDay        Boolean   @default(true) @map("is_full_day")
+
+  branch           Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade, map: "fk_branch_special_holidays_branch")
+
+  @@index([branchId, holidayDate], map: "idx_branch_holidays_date")
+  @@map("branch_special_holidays")
+}
+
+model BranchTempClosure {
+  id               String    @id @default(uuid()) @db.Uuid
+  branchId         String    @map("branch_id") @db.Uuid
+  startTime        DateTime  @map("start_time") @db.Timestamptz
+  endTime          DateTime  @map("end_time") @db.Timestamptz
+  reason           String
+
+  branch           Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade, map: "fk_branch_temp_closures_branch")
+
+  @@index([branchId, startTime], map: "idx_branch_closures_time")
+  @@map("branch_temp_closures")
+}
+
+model Staff {
+  id               String                @id @default(uuid()) @db.Uuid
+  userId           String?               @unique(map: "uq_staff_user_id") @map("user_id") @db.Uuid
+  firstName        String                @map("first_name")
+  lastName         String?               @map("last_name")
+  title            String
+  experienceLevel  StaffExperienceLevel  @default(MID) @map("experience_level")
+  skillRating      Decimal               @default(5.00) @map("skill_rating") @db.Decimal(3, 2)
+  avatarMediaId    String?               @map("avatar_media_id") @db.Uuid
+  isActive         Boolean               @default(true) @map("is_active")
+
+  createdAt        DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt        DateTime?             @map("deleted_at") @db.Timestamptz
+  createdById      String?               @map("created_by_id") @db.Uuid
+  updatedById      String?               @map("updated_by_id") @db.Uuid
+  version          Int                   @default(1)
+
+  user             User?                 @relation(fields: [userId], references: [id], onDelete: SetNull, map: "fk_staff_user")
+  avatarMedia      Media?                @relation("StaffAvatarMedia", fields: [avatarMediaId], references: [id], onDelete: SetNull, map: "fk_staff_avatar_media")
+  managedBranches  Branch[]              @relation("BranchManagerStaff")
+  assignments      StaffAssignment[]
+  shifts           StaffShift[]
+  leaves           StaffLeave[]
+  manualBlocks     StaffManualBlock[]
+  skills           StaffService[]
+
+  @@map("staff")
+}
+
+model StaffAssignment {
+  id               String        @id @default(uuid()) @db.Uuid
+  staffId          String        @map("staff_id") @db.Uuid
+  branchId         String        @map("branch_id") @db.Uuid
+  isPrimary        Boolean       @default(true) @map("is_primary")
+  startDate        DateTime      @map("start_date") @db.Date
+  endDate          DateTime?     @map("end_date") @db.Date
+
+  staff            Staff         @relation(fields: [staffId], references: [id], onDelete: Cascade, map: "fk_staff_assignments_staff")
+  branch           Branch        @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "fk_staff_assignments_branch")
+  appointments     Appointment[] @relation("AssignmentAppointments")
+
+  @@index([staffId, branchId], map: "idx_staff_assignments_lookup")
+  @@map("staff_assignments")
+}
+
+model StaffShift {
+  id               String         @id @default(uuid()) @db.Uuid
+  staffId          String         @map("staff_id") @db.Uuid
+  dayOfWeek        ShiftDayOfWeek @map("day_of_week")
+  startTime        DateTime       @map("start_time") @db.Time
+  endTime          DateTime       @map("end_time") @db.Time
+
+  staff            Staff          @relation(fields: [staffId], references: [id], onDelete: Cascade, map: "fk_staff_shifts_staff")
+  breaks           StaffBreak[]
+
+  @@index([staffId, dayOfWeek], map: "idx_staff_shifts_schedule")
+  @@map("staff_shifts")
+}
+
+model StaffBreak {
+  id               String     @id @default(uuid()) @db.Uuid
+  shiftId          String     @map("shift_id") @db.Uuid
+  startTime        DateTime   @map("start_time") @db.Time
+  endTime          DateTime   @map("end_time") @db.Time
+  breakName        String     @default("Lunch") @map("break_name")
+
+  shift            StaffShift @relation(fields: [shiftId], references: [id], onDelete: Cascade, map: "fk_staff_breaks_shift")
+
+  @@map("staff_breaks")
+}
+
+model StaffLeave {
+  id               String    @id @default(uuid()) @db.Uuid
+  staffId          String    @map("staff_id") @db.Uuid
+  leaveType        LeaveType @default(CASUAL_LEAVE) @map("leave_type")
+  startDate        DateTime  @map("start_date") @db.Date
+  endDate          DateTime  @map("end_date") @db.Date
+  reason           String?
+
+  staff            Staff     @relation(fields: [staffId], references: [id], onDelete: Cascade, map: "fk_staff_leaves_staff")
+
+  @@index([staffId, startDate], map: "idx_staff_leaves_date")
+  @@map("staff_leaves")
+}
+
+model StaffManualBlock {
+  id               String            @id @default(uuid()) @db.Uuid
+  staffId          String            @map("staff_id") @db.Uuid
+  startTime        DateTime          @map("start_time") @db.Timestamptz
+  endTime          DateTime          @map("end_time") @db.Timestamptz
+  reason           ManualBlockReason @default(MEETING)
+  notes            String?
+
+  staff            Staff             @relation(fields: [staffId], references: [id], onDelete: Cascade, map: "fk_staff_manual_blocks_staff")
+
+  @@index([staffId, startTime], map: "idx_staff_blocks_time")
+  @@map("staff_manual_blocks")
+}
+
+model ServiceCategory {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @unique(map: "uq_service_categories_name")
+  displayOrder     Int       @default(0) @map("display_order")
+  iconMediaId      String?   @map("icon_media_id") @db.Uuid
+
+  services         Service[]
+
+  @@map("service_categories")
+}
+
+model Service {
+  id               String               @id @default(uuid()) @db.Uuid
+  categoryId       String               @map("category_id") @db.Uuid
+  name             String
+  description      String?
+  genderCategory   BranchGenderCategory @default(UNISEX) @map("gender_category")
+
+  category         ServiceCategory      @relation(fields: [categoryId], references: [id], onDelete: Restrict, map: "fk_services_category")
+  branchServices   BranchService[]
+
+  @@map("services")
+}
+
+model BranchService {
+  id               String               @id @default(uuid()) @db.Uuid
+  branchId         String               @map("branch_id") @db.Uuid
+  serviceId        String               @map("service_id") @db.Uuid
+  price            Decimal              @db.Decimal(12, 2)
+  durationMinutes  Int                  @map("duration_minutes")
+  isActive         Boolean              @default(true) @map("is_active")
+
+  branch           Branch               @relation(fields: [branchId], references: [id], onDelete: Cascade, map: "fk_branch_services_branch")
+  service          Service              @relation(fields: [serviceId], references: [id], onDelete: Restrict, map: "fk_branch_services_service")
+  staffSkills      StaffService[]
+  appointmentItems AppointmentItem[]
+
+  @@index([branchId, serviceId], map: "idx_branch_services_lookup")
+  @@map("branch_services")
+}
+
+model StaffService {
+  staffId         String        @map("staff_id") @db.Uuid
+  branchServiceId String        @map("branch_service_id") @db.Uuid
+
+  staff           Staff         @relation(fields: [staffId], references: [id], onDelete: Cascade, map: "fk_staff_services_staff")
+  branchService   BranchService @relation(fields: [branchServiceId], references: [id], onDelete: Restrict, map: "fk_staff_services_branch_service")
+
+  @@id([staffId, branchServiceId], map: "pk_staff_services")
+  @@map("staff_services")
+}
+
+model Appointment {
+  id                String                @id @default(uuid()) @db.Uuid
+  bookingNumber     String                @unique(map: "uq_appointments_number") @map("booking_number")
+  customerId        String                @map("customer_id") @db.Uuid
+  branchId          String                @map("branch_id") @db.Uuid
+  staffAssignmentId String                @map("staff_assignment_id") @db.Uuid
+  appointmentDate   DateTime              @map("appointment_date") @db.Date
+  startTime         DateTime              @map("start_time") @db.Time
+  endTime           DateTime              @map("end_time") @db.Time
+  status            AppointmentStatus     @default(PENDING)
+  notes             String?
+
+  createdAt         DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime?             @map("deleted_at") @db.Timestamptz
+  createdById       String?               @map("created_by_id") @db.Uuid
+  updatedById       String?               @map("updated_by_id") @db.Uuid
+  version           Int                   @default(1)
+
+  customer          User                  @relation("CustomerAppointments", fields: [customerId], references: [id], onDelete: Restrict, map: "fk_appointments_customer")
+  branch            Branch                @relation(fields: [branchId], references: [id], onDelete: Restrict, map: "fk_appointments_branch")
+  staffAssignment   StaffAssignment       @relation("AssignmentAppointments", fields: [staffAssignmentId], references: [id], onDelete: Restrict, map: "fk_appointments_staff_assignment")
+  items             AppointmentItem[]
+  statusLogs        AppointmentStatusLog[]
+  invoice           Invoice?
+  couponUsage       CouponUsage?
+  review            Review?
+
+  @@index([branchId, appointmentDate], map: "idx_appointments_branch_date")
+  @@index([customerId], map: "idx_appointments_customer")
+  @@map("appointments")
+}
+
+model AppointmentItem {
+  id               String        @id @default(uuid()) @db.Uuid
+  appointmentId    String        @map("appointment_id") @db.Uuid
+  branchServiceId  String        @map("branch_service_id") @db.Uuid
+  price            Decimal       @db.Decimal(12, 2)
+  durationMinutes  Int           @map("duration_minutes")
+
+  appointment      Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade, map: "fk_appointment_items_appointment")
+  branchService    BranchService @relation(fields: [branchServiceId], references: [id], onDelete: Restrict, map: "fk_appointment_items_branch_service")
+
+  @@map("appointment_items")
+}
+
+model AppointmentStatusLog {
+  id               String            @id @default(uuid()) @db.Uuid
+  appointmentId    String            @map("appointment_id") @db.Uuid
+  fromStatus       AppointmentStatus @map("from_status")
+  toStatus         AppointmentStatus @map("to_status")
+  changedById      String            @map("changed_by_id") @db.Uuid
+  reason           String?
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz
+
+  appointment      Appointment       @relation(fields: [appointmentId], references: [id], onDelete: Cascade, map: "fk_appointment_status_logs_appointment")
+
+  @@map("appointment_status_logs")
+}
+
+model TaxRegion {
+  id                 String    @id @default(uuid()) @db.Uuid
+  regionCode         String    @unique(map: "uq_tax_regions_code") @map("region_code")
+  countryCode        String    @default("IN") @map("country_code")
+  taxName            String    @map("tax_name")
+  taxRatePercentage  Decimal   @map("tax_rate_percentage") @db.Decimal(5, 2)
+
+  invoices           Invoice[]
+
+  @@map("tax_regions")
+}
+
+model Invoice {
+  id                 String        @id @default(uuid()) @db.Uuid
+  invoiceNumber      String        @unique(map: "uq_invoices_number") @map("invoice_number")
+  appointmentId      String        @unique(map: "uq_invoices_appointment") @map("appointment_id") @db.Uuid
+  taxRegionId        String?       @map("tax_region_id") @db.Uuid
+  currencyCode       String        @default("INR") @map("currency_code") @db.Char(3)
+  subtotalAmount     Decimal       @map("subtotal_amount") @db.Decimal(12, 2)
+  discountAmount     Decimal       @default(0.00) @map("discount_amount") @db.Decimal(12, 2)
+  taxAmount          Decimal       @default(0.00) @map("tax_amount") @db.Decimal(12, 2)
+  totalAmount        Decimal       @map("total_amount") @db.Decimal(12, 2)
+  status             InvoiceStatus @default(ISSUED)
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  appointment        Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Restrict, map: "fk_invoices_appointment")
+  taxRegion          TaxRegion?    @relation(fields: [taxRegionId], references: [id], onDelete: SetNull, map: "fk_invoices_tax_region")
+  items              InvoiceItem[]
+  payments           Payment[]
+  payoutLedger       SalonPayoutLedger?
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id               String   @id @default(uuid()) @db.Uuid
+  invoiceId        String   @map("invoice_id") @db.Uuid
+  itemDescription  String   @map("item_description")
+  unitPrice        Decimal  @map("unit_price") @db.Decimal(12, 2)
+  quantity         Int      @default(1)
+
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade, map: "fk_invoice_items_invoice")
+
+  @@map("invoice_items")
+}
+
+model Payment {
+  id                String        @id @default(uuid()) @db.Uuid
+  invoiceId         String        @map("invoice_id") @db.Uuid
+  paymentMethod     PaymentMethod @map("payment_method")
+  transactionId     String?       @map("transaction_id")
+  gatewayOrderId    String?       @map("gateway_order_id")
+  gatewayPaymentId  String?       @map("gateway_payment_id")
+  gatewaySignature  String?       @map("gateway_signature")
+  amount            Decimal       @db.Decimal(12, 2)
+  currencyCode      String        @default("INR") @map("currency_code") @db.Char(3)
+  status            PaymentStatus @default(PENDING)
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  invoice           Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Restrict, map: "fk_payments_invoice")
+
+  @@index([gatewayPaymentId], map: "idx_payments_gateway_id")
+  @@map("payments")
+}
+
+model SalonPayoutLedger {
+  id               String   @id @default(uuid()) @db.Uuid
+  invoiceId        String   @unique(map: "uq_payout_ledger_invoice") @map("invoice_id") @db.Uuid
+  grossAmount      Decimal  @map("gross_amount") @db.Decimal(12, 2)
+  commissionAmount Decimal  @map("commission_amount") @db.Decimal(12, 2)
+  netPayoutAmount  Decimal  @map("net_payout_amount") @db.Decimal(12, 2)
+  isSettled        Boolean  @default(false) @map("is_settled")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict, map: "fk_payout_ledger_invoice")
+
+  @@map("salon_payout_ledgers")
+}
+
+// Phase 2 Future Entity Reservations
+
+model Coupon {
+  id               String             @id @default(uuid()) @db.Uuid
+  code             String             @unique(map: "uq_coupons_code")
+  discountType     CouponDiscountType @map("discount_type")
+  discountValue    Decimal            @map("discount_value") @db.Decimal(10, 2)
+  minOrderAmount   Decimal            @default(0.00) @map("min_order_amount") @db.Decimal(12, 2)
+  maxDiscountAmount Decimal?          @map("max_discount_amount") @db.Decimal(12, 2)
+  startDate        DateTime           @map("start_date") @db.Timestamptz
+  endDate          DateTime           @map("end_date") @db.Timestamptz
+  usageLimit       Int                @default(100) @map("usage_limit")
+  usageCount       Int                @default(0) @map("usage_count")
+  isActive         Boolean            @default(true) @map("is_active")
+
+  usages           CouponUsage[]
+
+  @@map("coupons")
+}
+
+model CouponUsage {
+  id               String      @id @default(uuid()) @db.Uuid
+  couponId         String      @map("coupon_id") @db.Uuid
+  appointmentId    String      @unique(map: "uq_coupon_usages_appointment") @map("appointment_id") @db.Uuid
+  customerId       String      @map("customer_id") @db.Uuid
+  discountApplied  Decimal     @map("discount_applied") @db.Decimal(12, 2)
+  usedAt           DateTime    @default(now()) @map("used_at") @db.Timestamptz
+
+  coupon           Coupon      @relation(fields: [couponId], references: [id], onDelete: Restrict, map: "fk_coupon_usages_coupon")
+  appointment      Appointment @relation(fields: [appointmentId], references: [id], onDelete: Restrict, map: "fk_coupon_usages_appointment")
+
+  @@map("coupon_usages")
+}
+
+model Review {
+  id               String       @id @default(uuid()) @db.Uuid
+  appointmentId    String       @unique(map: "uq_reviews_appointment") @map("appointment_id") @db.Uuid
+  customerId       String       @map("customer_id") @db.Uuid
+  ratingStars      Int          @map("rating_stars")
+  reviewText       String?      @map("review_text")
+  createdAt        DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  appointment      Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Restrict, map: "fk_reviews_appointment")
+  reply            ReviewReply?
+
+  @@index([customerId], map: "idx_reviews_customer")
+  @@index([createdAt(sort: Desc)], map: "idx_reviews_created_at")
+  @@map("reviews")
+}
+
+model ReviewReply {
+  id               String   @id @default(uuid()) @db.Uuid
+  reviewId         String   @unique(map: "uq_review_replies_review") @map("review_id") @db.Uuid
+  ownerId          String   @map("owner_id") @db.Uuid
+  replyText        String   @map("reply_text")
+  repliedAt        DateTime @default(now()) @map("replied_at") @db.Timestamptz
+
+  review           Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade, map: "fk_review_replies_review")
+
+  @@map("review_replies")
+}
+
+model NotificationTemplate {
+  id               String              @id @default(uuid()) @db.Uuid
+  templateCode     String              @unique(map: "uq_notification_templates_code") @map("template_code")
+  channel          NotificationChannel
+  subjectTemplate  String?             @map("subject_template")
+  bodyTemplate     String              @map("body_template")
+  isActive         Boolean             @default(true) @map("is_active")
+
+  notifications    Notification[]
+
+  @@map("notification_templates")
+}
+
+model Notification {
+  id               String               @id @default(uuid()) @db.Uuid
+  userId           String               @map("user_id") @db.Uuid
+  templateId       String?              @map("template_id") @db.Uuid
+  title            String
+  body             String
+  createdAt        DateTime             @default(now()) @map("created_at") @db.Timestamptz
+
+  user             User                 @relation(fields: [userId], references: [id], onDelete: Cascade, map: "fk_notifications_user")
+  template         NotificationTemplate?@relation(fields: [templateId], references: [id], onDelete: SetNull, map: "fk_notifications_template")
+  deliveries       NotificationDelivery[]
+
+  @@index([userId], map: "idx_notifications_user")
+  @@map("notifications")
+}
+
+model NotificationDelivery {
+  id               String              @id @default(uuid()) @db.Uuid
+  notificationId   String              @map("notification_id") @db.Uuid
+  channel          NotificationChannel
+  status           NotificationStatus  @default(QUEUED)
+  sentAt           DateTime?           @map("sent_at") @db.Timestamptz
+  readAt           DateTime?           @map("read_at") @db.Timestamptz
+  failedReason     String?             @map("failed_reason")
+  retryCount       Int                 @default(0) @map("retry_count")
+
+  notification     Notification        @relation(fields: [notificationId], references: [id], onDelete: Cascade, map: "fk_notification_deliveries_notification")
+
+  @@map("notification_deliveries")
+}
+
+model SearchHistory {
+  id               String   @id @default(uuid()) @db.Uuid
+  customerId       String?  @map("customer_id") @db.Uuid
+  sessionId        String?  @map("session_id")
+  deviceId         String?  @map("device_id")
+  searchQuery      String   @map("search_query")
+  latitude         Float?
+  longitude        Float?
+  resultsCount     Int      @default(0) @map("results_count")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("search_history")
+}
+
+model TrendingSearch {
+  id               String   @id @default(uuid()) @db.Uuid
+  keyword          String   @unique(map: "uq_trending_searches_keyword")
+  searchCount      Int      @default(1) @map("search_count")
+  city             String   @default("Bangalore")
+
+  @@map("trending_searches")
+}
+
+model Media {
+  id               String    @id @default(uuid()) @db.Uuid
+  url              String
+  thumbnailUrl     String?   @map("thumbnail_url")
+  publicId         String?   @map("public_id")
+  provider         String    @default("CLOUDINARY")
+  mimeType         String?   @map("mime_type")
+  mediaType        MediaType @default(IMAGE) @map("media_type")
+  fileSize         Int       @map("file_size")
+  uploadedById     String?   @map("uploaded_by_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  uploader         User?     @relation("MediaUploader", fields: [uploadedById], references: [id], onDelete: SetNull, map: "fk_media_uploader")
+  salonLogos       Salon[]   @relation("SalonLogoMedia")
+  branchCovers     Branch[]  @relation("BranchCoverMedia")
+  staffAvatars     Staff[]   @relation("StaffAvatarMedia")
+
+  @@map("media")
+}
+
+model AuditLog {
+  id               String      @id @default(uuid()) @db.Uuid
+  whoId            String      @map("who_id") @db.Uuid
+  role             UserRole
+  action           AuditAction
+  entityType       String      @map("entity_type")
+  entityId         String      @map("entity_id")
+  oldValueJson     Json?       @map("old_value_json")
+  newValueJson     Json?       @map("new_value_json")
+  ipAddress        String?     @map("ip_address")
+  userAgent        String?     @map("user_agent")
+  createdAt        DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  who              User        @relation(fields: [whoId], references: [id], onDelete: Restrict, map: "fk_audit_logs_user")
+
+  @@index([createdAt(sort: Desc)], map: "idx_audit_logs_created_at")
+  @@map("audit_logs")
+}
+
+model ActivityLog {
+  id               String   @id @default(uuid()) @db.Uuid
+  branchId         String   @map("branch_id") @db.Uuid
+  actorName        String   @map("actor_name")
+  actionSummary    String   @map("action_summary")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([branchId, createdAt(sort: Desc)], map: "idx_activity_logs_branch")
+  @@map("activity_logs")
+}
+
+model PlatformSettings {
+  id                         String   @id @default("00000000-0000-0000-0000-000000000001") @map("id") @db.Uuid
+  defaultCommissionPercentage Decimal  @default(10.00) @map("default_commission_percentage") @db.Decimal(5, 2)
+  taxRatePercentage          Decimal  @default(18.00) @map("tax_rate_percentage") @db.Decimal(5, 2)
+  bookingBufferMinutes       Int      @default(10) @map("booking_buffer_minutes")
+  freeCancellationHours      Int      @default(4) @map("free_cancellation_hours")
+  minBookingLeadMinutes      Int      @default(30) @map("min_booking_lead_minutes")
+  maxAdvanceBookingDays      Int      @default(30) @map("max_advance_booking_days")
+  updatedAt                  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("platform_settings")
+}
