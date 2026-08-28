@@ -191,7 +191,7 @@ export default function StaffPage() {
 
           <Input label="Mobile Phone" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91 9876543210" />
           <Input label="Email (Optional login)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="anita@glamourluxe.com" />
-          
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <Input label="Job Title" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Master Colorist" />
             <Input label="Commission %" type="number" required value={commissionRate} onChange={(e) => setCommissionRate(e.target.value === '' ? '' : Number(e.target.value))} />
