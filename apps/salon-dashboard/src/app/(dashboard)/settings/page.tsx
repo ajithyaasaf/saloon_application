@@ -3,23 +3,41 @@
 import React, { useState } from 'react';
 import { Building, Save, Shield } from 'lucide-react';
 import { useSalon } from '../../../context/SalonContext.js';
+import { salonService } from '../../../services/salon-domain.services.js';
 import { Card } from '../../../components/ui/Card.js';
 import { Button } from '../../../components/ui/Button.js';
 import { Input } from '../../../components/ui/Input.js';
 
 export default function SettingsPage() {
-  const { salon } = useSalon();
+  const { salon, refreshSalonData } = useSalon();
   const [salonName, setSalonName] = useState(salon?.name || 'Glamour Luxe Unisex Salon');
   const [contactEmail, setContactEmail] = useState(salon?.contactEmail || 'contact@glamourluxe.com');
   const [contactPhone, setContactPhone] = useState(salon?.contactPhone || '+91 9876543210');
   const [gstin, setGstin] = useState(salon?.gstin || '29ABCDE1234F1Z5');
   const [pan, setPan] = useState(salon?.pan || 'ABCDE1234F');
   const [isSaved, setIsSaved] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
+    if (!salon) return;
+    setIsSubmitting(true);
+    try {
+      await salonService.updateSalon(salon.id, {
+        name: salonName,
+        contactEmail,
+        contactPhone,
+        gstin,
+        pan,
+      });
+      await refreshSalonData();
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to update salon settings:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

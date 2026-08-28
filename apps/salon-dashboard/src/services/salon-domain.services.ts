@@ -77,6 +77,11 @@ export const salonService = {
     return res.data;
   },
 
+  async updateSalon(id: string, data: any): Promise<SalonDto> {
+    const res = await apiClient.patch<SalonDto>(API_ROUTES.SALONS.UPDATE(id), data);
+    return res.data;
+  },
+
   async getBranches(salonId: string): Promise<BranchDto[]> {
     const res = await apiClient.get<BranchDto[]>(API_ROUTES.SALONS.BRANCHES.LIST(salonId));
     return res.data;
