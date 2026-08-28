@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { adminBookingService } from '@/services/admin-domain.services';
 import { BookingDto, BookingStatus } from '@saloon/shared-types';
-import { formatINR } from '@saloon/shared-utils';
+import { formatINR, format12HourTimeRange } from '@saloon/shared-utils';
 import { DataTable, Column } from '@/components/ui/DataTable';
 import { AppBadge } from '@/components/ui/AppBadge';
 import { AppButton } from '@/components/ui/AppButton';
@@ -106,7 +106,7 @@ export default function BookingsPage() {
             {b.bookingDate}
           </span>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            {b.startTime} - {b.endTime}
+            {format12HourTimeRange(b.startTime, b.endTime)}
           </span>
         </div>
       ),
@@ -242,7 +242,7 @@ export default function BookingsPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem' }}>
                 <Clock size={16} color="var(--primary)" />
                 <span>
-                  {selectedBooking.startTime} - {selectedBooking.endTime}
+                  {format12HourTimeRange(selectedBooking.startTime, selectedBooking.endTime)}
                 </span>
               </div>
             </div>

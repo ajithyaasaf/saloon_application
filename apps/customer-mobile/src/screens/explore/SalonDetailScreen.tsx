@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { BranchDto, ReviewDto, SalonDto } from '@saloon/shared-types';
+import { format12HourTimeRange } from '@saloon/shared-utils';
 import { AppButton } from '../../components/ui/AppButton';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppBadge } from '../../components/ui/AppBadge';
@@ -206,6 +207,15 @@ export const SalonDetailScreen: React.FC<SalonDetailScreenProps> = ({
                     {b.addressLine1}, {b.city} - {b.postalCode}
                   </Text>
                 </View>
+
+                {b.operatingHours && b.operatingHours.length > 0 && b.operatingHours[0] && (
+                  <View style={[styles.metaRow, { marginTop: 4 }]}>
+                    <Icon name="clock" size={13} color={colors.primary} />
+                    <Text style={[typography.caption, { color: colors.textSecondary }]}>
+                      Hours: {format12HourTimeRange(b.operatingHours[0].openTime, b.operatingHours[0].closeTime)}
+                    </Text>
+                  </View>
+                )}
               </AppCard>
             );
           })}

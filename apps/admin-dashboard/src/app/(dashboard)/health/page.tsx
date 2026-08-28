@@ -7,6 +7,7 @@ import { AppBadge } from '@/components/ui/AppBadge';
 import { AppButton } from '@/components/ui/AppButton';
 import { useToast } from '@/context/ToastContext';
 import { Activity, CheckCircle2, AlertTriangle, RefreshCw, Server, Database, Zap, HardDrive } from 'lucide-react';
+import { formatUtcTo12HourTime } from '@saloon/shared-utils';
 
 export default function HealthPage() {
   const { success, danger } = useToast();
@@ -50,7 +51,7 @@ export default function HealthPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            Last checked: {lastChecked.toLocaleTimeString()}
+            Last checked: {formatUtcTo12HourTime(lastChecked)}
           </span>
           <AppButton
             variant="secondary"

@@ -129,8 +129,10 @@ export default function PromotionsPage() {
       render: (u) => (
         <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
           {new Date(u.appliedAt || u.createdAt).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
             dateStyle: 'medium',
             timeStyle: 'short',
+            hour12: true,
           })}
         </span>
       ),

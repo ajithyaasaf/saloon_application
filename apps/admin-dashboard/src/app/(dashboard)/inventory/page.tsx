@@ -127,7 +127,12 @@ export default function InventoryPage() {
       header: 'Timestamp',
       render: (m) => (
         <span style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
-          {new Date(m.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+          {new Date(m.createdAt).toLocaleString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            dateStyle: 'medium',
+            timeStyle: 'short',
+            hour12: true,
+          })}
         </span>
       ),
     },

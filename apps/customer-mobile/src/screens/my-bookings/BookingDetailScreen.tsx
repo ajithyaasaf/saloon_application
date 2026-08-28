@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { BookingDto, BookingStatus } from '@saloon/shared-types';
-import { formatINR } from '@saloon/shared-utils';
+import { formatINR, format12HourTimeRange } from '@saloon/shared-utils';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppButton } from '../../components/ui/AppButton';
@@ -124,7 +124,7 @@ export const BookingDetailScreen: React.FC<BookingDetailScreenProps> = ({
             <View style={[styles.metaRow, { marginTop: 6 }]}>
               <Icon name="calendar" size={14} color={colors.primary} />
               <Text style={[typography.bodyBold, { color: colors.primary }]}>
-                {booking.bookingDate} • {booking.startTime} - {booking.endTime}
+                {booking.bookingDate} • {format12HourTimeRange(booking.startTime, booking.endTime)}
               </Text>
             </View>
 

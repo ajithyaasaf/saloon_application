@@ -7,7 +7,7 @@ import {
   View,
 } from 'react-native';
 import { AvailableTimeSlotDto } from '@saloon/shared-types';
-import { formatDateToISTString } from '@saloon/shared-utils';
+import { formatDateToISTString, format12HourTime } from '@saloon/shared-utils';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { AppButton } from '../../components/ui/AppButton';
 import { Icon } from '../../components/ui/Icon';
@@ -181,7 +181,7 @@ export const DateTimeSlotScreen: React.FC<DateTimeSlotScreenProps> = ({
                       },
                     ]}
                   >
-                    {slot.startTime}
+                    {format12HourTime(slot.startTime)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -233,7 +233,7 @@ export const DateTimeSlotScreen: React.FC<DateTimeSlotScreenProps> = ({
                       },
                     ]}
                   >
-                    {slot.startTime}
+                    {format12HourTime(slot.startTime)}
                   </Text>
                 </TouchableOpacity>
               );
@@ -247,7 +247,7 @@ export const DateTimeSlotScreen: React.FC<DateTimeSlotScreenProps> = ({
         <View>
           <Text style={[typography.caption, { color: colors.textMuted }]}>Selected Time</Text>
           <Text style={[typography.bodyBold, { color: colors.primary }]}>
-            {selectedSlot ? `${selectedDate} at ${selectedSlot.startTime}` : 'Choose a time slot'}
+            {selectedSlot ? `${selectedDate} at ${format12HourTime(selectedSlot.startTime)}` : 'Choose a time slot'}
           </Text>
         </View>
         <AppButton

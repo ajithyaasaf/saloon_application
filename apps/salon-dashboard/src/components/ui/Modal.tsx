@@ -64,7 +64,7 @@ export const Modal: React.FC<ModalProps> = ({
             <X size={20} />
           </button>
         </div>
-        <div style={{ padding: '1.5rem', maxHeight: '75vh', overflowY: 'auto' }}>
+        <div style={{ padding: '1.5rem', maxHeight: '75vh', overflowY: 'auto', overflowX: 'hidden' }}>
           {children}
         </div>
         {footer && (

@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { SalonDto, ServiceCategoryDto } from '@saloon/shared-types';
+import { getTimeOfDayGreeting } from '@saloon/shared-utils';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppBadge } from '../../components/ui/AppBadge';
 import { AppButton } from '../../components/ui/AppButton';
@@ -118,7 +119,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </View>
               <View style={styles.userGreetingCol}>
                 <Text style={[typography.caption, styles.greetingSub]}>Hello {displayName}</Text>
-                <Text style={[typography.heading2, styles.greetingTitle]}>Good Morning</Text>
+                <Text style={[typography.heading2, styles.greetingTitle]}>{getTimeOfDayGreeting()}</Text>
               </View>
             </View>
 

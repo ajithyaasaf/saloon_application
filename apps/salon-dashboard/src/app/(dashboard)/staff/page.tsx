@@ -11,6 +11,8 @@ import { Badge } from '../../../components/ui/Badge.js';
 import { Modal } from '../../../components/ui/Modal.js';
 import { Input } from '../../../components/ui/Input.js';
 import { Select } from '../../../components/ui/Select.js';
+import { TimePicker } from '../../../components/ui/TimePicker.js';
+import { format12HourTime } from '@saloon/shared-utils';
 
 export default function StaffPage() {
   const { salon, selectedBranch } = useSalon();
@@ -209,13 +211,33 @@ export default function StaffPage() {
             Set standard working schedule and lunch break for Monday through Saturday.
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input label="Shift Start Time" type="time" required value={shiftStart} onChange={(e) => setShiftStart(e.target.value)} />
-            <Input label="Shift End Time" type="time" required value={shiftEnd} onChange={(e) => setShiftEnd(e.target.value)} />
+            <TimePicker label="Shift Start Time" required value={shiftStart} onChange={setShiftStart} align="left" />
+            <TimePicker label="Shift End Time" required value={shiftEnd} onChange={setShiftEnd} align="right" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
-            <Input label="Lunch Break Start" type="time" required value={breakStart} onChange={(e) => setBreakStart(e.target.value)} />
-            <Input label="Lunch Break End" type="time" required value={breakEnd} onChange={(e) => setBreakEnd(e.target.value)} />
+            <TimePicker label="Lunch Break Start" required value={breakStart} onChange={setBreakStart} align="left" />
+            <TimePicker label="Lunch Break End" required value={breakEnd} onChange={setBreakEnd} align="right" />
           </div>
+
+          <div
+            style={{
+              marginTop: '1.25rem',
+              padding: '0.75rem 1rem',
+              background: 'var(--color-action-secondary)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.8125rem',
+            }}
+          >
+            <span style={{ color: 'var(--color-text-secondary)' }}>Assigned Stylist Shift:</span>
+            <span style={{ fontWeight: 700, color: 'var(--color-action-primary)' }}>
+              {format12HourTime(shiftStart)} – {format12HourTime(shiftEnd)}
+            </span>
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <Button variant="secondary" type="button" onClick={() => setIsShiftModalOpen(false)}>Cancel</Button>
             <Button variant="primary" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Shifts'}</Button>

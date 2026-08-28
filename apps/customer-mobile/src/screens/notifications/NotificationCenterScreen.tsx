@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { NotificationItemDto } from '@saloon/shared-types';
+import { formatUtcTo12HourTime } from '@saloon/shared-utils';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppBadge } from '../../components/ui/AppBadge';
@@ -119,7 +120,7 @@ export const NotificationCenterScreen: React.FC<NotificationCenterScreenProps> =
                     {n.body}
                   </Text>
                   <Text style={[typography.micro, { color: colors.textMuted, marginTop: 8 }]}>
-                    {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} •{' '}
+                    {formatUtcTo12HourTime(n.createdAt)} •{' '}
                     {new Date(n.createdAt).toLocaleDateString()}
                   </Text>
                 </AppCard>

@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native';
 import { BookingStatus, BookingSummaryDto } from '@saloon/shared-types';
-import { formatINR } from '@saloon/shared-utils';
+import { formatINR, format12HourTimeRange } from '@saloon/shared-utils';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppBadge } from '../../components/ui/AppBadge';
@@ -171,7 +171,7 @@ export const MyBookingsScreen: React.FC<MyBookingsScreenProps> = ({
                   <Text style={[typography.caption, { color: colors.textSecondary }]}> • </Text>
                   <Icon name="clock" size={14} color={colors.primary} />
                   <Text style={[typography.bodyBold, { color: colors.primary }]}>
-                    {b.startTime} - {b.endTime}
+                    {format12HourTimeRange(b.startTime, b.endTime)}
                   </Text>
                 </View>
               </View>

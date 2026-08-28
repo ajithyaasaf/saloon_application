@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { CouponDto, DiscountType, FlashSaleDto } from '@saloon/shared-types';
-import { formatINR } from '@saloon/shared-utils';
+import { formatINR, formatUtcTo12HourTime } from '@saloon/shared-utils';
 import { Gift, Plus, Sparkles, Tag, Trash2, Zap } from 'lucide-react';
 import { useSalon } from '../../../context/SalonContext.js';
 import { promotionsService } from '../../../services/salon-domain.services.js';
@@ -272,8 +272,7 @@ export default function PromotionsPage() {
                         </td>
                         <td>
                           <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8125rem' }}>
-                            {new Date(fs.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} –{' '}
-                            {new Date(fs.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {formatUtcTo12HourTime(fs.startTime)} – {formatUtcTo12HourTime(fs.endTime)}
                           </span>
                         </td>
                         <td className="align-center">

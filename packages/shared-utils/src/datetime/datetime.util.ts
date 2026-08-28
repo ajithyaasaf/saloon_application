@@ -97,13 +97,137 @@ export function formatDateToISTString(dateInput: Date | string | number): string
   const d = new Date(dateInput);
   if (isNaN(d.getTime())) return '';
 
-  // IST offset is UTC+5:30 (330 minutes)
-  const utc = d.getTime() + d.getTimezoneOffset() * 60000;
-  const istDate = new Date(utc + 330 * 60000);
-
-  const year = istDate.getFullYear();
-  const month = (istDate.getMonth() + 1).toString().padStart(2, '0');
-  const day = istDate.getDate().toString().padStart(2, '0');
-
-  return `${year}-${month}-${day}`;
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  return formatter.format(d);
 }
+
+/**
+ * Strict 12-Hour AM/PM Formatter for local "HH:mm" wall-clock strings.
+ * 
+ * Expected Input: Valid 24-hour time string ("HH:mm" or "H:mm", e.g. "09:00", "13:30", "00:00").
+ * Output: 12-hour AM/PM string ("09:00 AM", "01:30 PM", "12:00 AM", "12:00 PM").
+ * 
+ * NOTE: Does NOT apply timezone shifts. "13:30" is treated as local wall-clock time.
+ * Invalid, empty, or unparseable inputs return the fallback string ("—" by default).
+ */
+export function format12HourTime(timeStr?: string | null, fallback = '—'): string {
+  if (!timeStr || typeof timeStr !== 'string') return fallback;
+
+  const trimmed = timeStr.trim();
+  const match = trimmed.match(/^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/);
+  if (!match) return fallback;
+
+  const hours = parseInt(match[1]!, 10);
+  const minutes = match[2]!;
+
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 === 0 ? 12 : hours % 12;
+
+  return `${hours12.toString().padStart(2, '0')}:${minutes} ${period}`;
+}
+
+/**
+ * Format a local "HH:mm" start and end time range into 12-hour AM/PM format.
+ * (e.g. "09:00", "20:00" -> "09:00 AM – 08:00 PM")
+ */
+export function format12HourTimeRange(
+  startStr?: string | null,
+  endStr?: string | null,
+  fallback = '—',
+): string {
+  const formattedStart = format12HourTime(startStr, '');
+  const formattedEnd = format12HourTime(endStr, '');
+
+  if (formattedStart && formattedEnd) {
+    return `${formattedStart} – ${formattedEnd}`;
+  }
+  if (formattedStart) {
+    return formattedStart;
+  }
+  if (formattedEnd) {
+    return formattedEnd;
+  }
+  return fallback;
+}
+
+/**
+ * Format a UTC Date object, ISO timestamp, or epoch into 12-hour AM/PM time in a specified timezone.
+ * 
+ * Uses standard Intl.DateTimeFormat (Default timezone: 'Asia/Kolkata' for Indian Standard Time).
+ */
+export function formatUtcTo12HourTime(
+  dateInput: Date | string | number,
+  timeZone = 'Asia/Kolkata',
+  fallback = '—',
+): string {
+  const d = typeof dateInput === 'string' || typeof dateInput === 'number' ? new Date(dateInput) : dateInput;
+  if (!d || isNaN(d.getTime())) return fallback;
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+    // Replace non-breaking or thin spaces with regular ASCII space
+    return formatter.format(d).replace(/[\u202F\u00A0]/g, ' ');
+  } catch {
+    return fallback;
+  }
+}
+
+/**
+ * Generate a list of time options for UI dropdowns (e.g. for operating hours and shift pickers).
+ * 
+ * Returns array of { value: "HH:mm", label: "hh:mm A" } (e.g. { value: "09:00", label: "09:00 AM" }).
+ */
+export function generateTimeOptions(
+  stepMinutes = 30,
+  startMinute = 360, // 06:00 AM
+  endMinute = 1410,  // 11:30 PM
+): Array<{ value: string; label: string }> {
+  const options: Array<{ value: string; label: string }> = [];
+  const safeStep = Math.max(5, stepMinutes);
+
+  for (let m = startMinute; m <= endMinute; m += safeStep) {
+    const value = minutesToTimeString(m);
+    const label = format12HourTime(value);
+    options.push({ value, label });
+  }
+
+  return options;
+}
+
+/**
+ * Get a contextual time-of-day greeting (e.g. "Good Morning", "Good Afternoon", "Good Evening")
+ * evaluated in the specified timezone (default: 'Asia/Kolkata').
+ */
+export function getTimeOfDayGreeting(
+  dateInput: Date | string | number = new Date(),
+  timeZone = 'Asia/Kolkata',
+): string {
+  const d = typeof dateInput === 'string' || typeof dateInput === 'number' ? new Date(dateInput) : dateInput;
+  if (!d || isNaN(d.getTime())) return 'Welcome';
+
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      hour: 'numeric',
+      hour12: false,
+    });
+    const hour = parseInt(formatter.format(d), 10);
+    if (hour >= 5 && hour < 12) return 'Good Morning';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  } catch {
+    return 'Welcome';
+  }
+}
+
+

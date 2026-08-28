@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { BookingDto, BookingStatus } from '@saloon/shared-types';
-import { formatDateToISTString, formatDuration, formatINR } from '@saloon/shared-utils';
+import { formatDateToISTString, formatDuration, formatINR, format12HourTime } from '@saloon/shared-utils';
 import { Calendar as CalendarIcon, CheckCircle2, ChevronLeft, ChevronRight, Clock, Plus, Play, UserCheck, XCircle } from 'lucide-react';
 import { bookingService } from '../../services/salon-domain.services.js';
 import { useSalon } from '../../context/SalonContext.js';
@@ -146,10 +146,10 @@ export const MasterCalendar: React.FC = () => {
                   }}
                 >
                   <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                    {booking.startTime}
+                    {format12HourTime(booking.startTime)}
                   </span>
                   <span style={{ fontSize: '0.6875rem', color: 'var(--color-text-muted)' }}>
-                    {booking.endTime}
+                    {format12HourTime(booking.endTime)}
                   </span>
                 </div>
 

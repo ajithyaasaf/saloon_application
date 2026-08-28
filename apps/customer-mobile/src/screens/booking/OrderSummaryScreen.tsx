@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { formatDuration, formatINR } from '@saloon/shared-utils';
+import { formatDuration, formatINR, format12HourTime } from '@saloon/shared-utils';
 import { AppHeader } from '../../components/ui/AppHeader';
 import { AppButton } from '../../components/ui/AppButton';
 import { AppCard } from '../../components/ui/AppCard';
@@ -78,7 +78,7 @@ export const OrderSummaryScreen: React.FC<OrderSummaryScreenProps> = ({
           <View style={styles.metaRow}>
             <Icon name="calendar" size={14} color={colors.primary} />
             <Text style={[typography.caption, { color: colors.textSecondary }]}>
-              {draft.selectedDate} at {draft.selectedSlot?.startTime || '10:00 AM'}
+              {draft.selectedDate} at {format12HourTime(draft.selectedSlot?.startTime)}
             </Text>
           </View>
         </AppCard>

@@ -5,7 +5,7 @@ import {
   View,
 } from 'react-native';
 import { BookingPaymentType } from '@saloon/shared-types';
-import { formatINR } from '@saloon/shared-utils';
+import { formatINR, format12HourTime } from '@saloon/shared-utils';
 import { AppButton } from '../../components/ui/AppButton';
 import { AppCard } from '../../components/ui/AppCard';
 import { AppBadge } from '../../components/ui/AppBadge';
@@ -84,7 +84,7 @@ export const PaymentConfirmationScreen: React.FC<PaymentConfirmationScreenProps>
             <View style={styles.confRow}>
               <Text style={[styles.confLabel, { color: colors.textMuted }]}>Date & Time</Text>
               <Text style={[styles.confVal, { color: colors.textPrimary }]}>
-                {draft.selectedDate} at {draft.selectedSlot?.startTime}
+                {draft.selectedDate} at {format12HourTime(draft.selectedSlot?.startTime)}
               </Text>
             </View>
             <View style={styles.confRow}>

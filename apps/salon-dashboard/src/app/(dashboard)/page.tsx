@@ -75,7 +75,7 @@ export default function DashboardOverviewPage() {
             >
               Salon Partner HQ
             </span>
-            <Badge variant="success">Branch Live • 09:00 – 20:00</Badge>
+            <Badge variant="success">Branch Live • 09:00 AM – 08:00 PM</Badge>
           </div>
           <h1 style={{ fontSize: '1.625rem', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
             Welcome back, {user?.firstName || 'Elena'} 👋

@@ -10,6 +10,8 @@ import { Button } from '../../../components/ui/Button.js';
 import { Badge } from '../../../components/ui/Badge.js';
 import { Modal } from '../../../components/ui/Modal.js';
 import { Input } from '../../../components/ui/Input.js';
+import { TimePicker } from '../../../components/ui/TimePicker.js';
+import { format12HourTime, format12HourTimeRange } from '@saloon/shared-utils';
 
 const DAYS_OF_WEEK: DayOfWeek[] = [
   DayOfWeek.MONDAY,
@@ -198,12 +200,12 @@ export default function BranchesPage() {
                     </td>
                     <td>
                       <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                        {openTime}
+                        {format12HourTime(openTime)}
                       </span>
                     </td>
                     <td>
                       <span style={{ fontFamily: 'monospace', fontSize: '0.875rem', fontWeight: 600, color: 'var(--color-text-primary)' }}>
-                        {closeTime}
+                        {format12HourTime(closeTime)}
                       </span>
                     </td>
                     <td>
@@ -220,7 +222,7 @@ export default function BranchesPage() {
                           color: 'var(--color-text-secondary)',
                         }}
                       >
-                        <Clock size={12} /> {lunchStart} – {lunchEnd}
+                        <Clock size={12} /> {format12HourTimeRange(lunchStart, lunchEnd)}
                       </span>
                     </td>
                   </tr>
@@ -234,14 +236,38 @@ export default function BranchesPage() {
       {/* Operating Hours Modal */}
       <Modal isOpen={isHoursModalOpen} onClose={() => setIsHoursModalOpen(false)} title={`Configure Operating Hours: ${selectedBranch?.name || ''}`}>
         <form onSubmit={handleSaveOperatingHours}>
+          <p style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)', marginBottom: '1rem' }}>
+            Set the standard salon operational opening/closing times and midday staff lunch break.
+          </p>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <Input label="Opening Time" type="time" required value={openTime} onChange={(e) => setOpenTime(e.target.value)} />
-            <Input label="Closing Time" type="time" required value={closeTime} onChange={(e) => setCloseTime(e.target.value)} />
+            <TimePicker label="Opening Time" required value={openTime} onChange={setOpenTime} align="left" />
+            <TimePicker label="Closing Time" required value={closeTime} onChange={setCloseTime} align="right" />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.75rem' }}>
-            <Input label="Lunch Break Start" type="time" required value={lunchStart} onChange={(e) => setLunchStart(e.target.value)} />
-            <Input label="Lunch Break End" type="time" required value={lunchEnd} onChange={(e) => setLunchEnd(e.target.value)} />
+            <TimePicker label="Lunch Break Start" required value={lunchStart} onChange={setLunchStart} align="left" />
+            <TimePicker label="Lunch Break End" required value={lunchEnd} onChange={setLunchEnd} align="right" />
           </div>
+
+          <div
+            style={{
+              marginTop: '1.25rem',
+              padding: '0.75rem 1rem',
+              background: 'var(--color-action-secondary)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--color-border-subtle)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.8125rem',
+            }}
+          >
+            <span style={{ color: 'var(--color-text-secondary)' }}>Selected Active Window:</span>
+            <span style={{ fontWeight: 700, color: 'var(--color-action-primary)' }}>
+              {format12HourTime(openTime)} – {format12HourTime(closeTime)}
+            </span>
+          </div>
+
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
             <Button variant="secondary" type="button" onClick={() => setIsHoursModalOpen(false)}>Cancel</Button>
             <Button variant="primary" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving...' : 'Save Hours'}</Button>
